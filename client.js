@@ -6,7 +6,7 @@
  * state with a JSON view, artifact saving, and API-key management.
  */
 window.__ModuleLoader__.load({
-  id: '@local/dsh-bizyair',
+  id: 'dsh-bizyair',
   factory(require) {
     const React = require('react')
     const h = React.createElement

@@ -1,6 +1,6 @@
 - insert:
     - id: bizyair
-      name: '@local/dsh-bizyair'
+      name: 'dsh-bizyair'
       config:
         apiKeyFile: /Users/yaochi/.dsh/bizyair.key
         approvalThresholdUsd: 20

@@ -32,14 +32,7 @@ dsh-bizyair/
 
 ### 发布前要改的地方
 
-| 位置 | 现在 | 发布时改成 |
-|---|---|---|
-| `package.json` `name` | `@local/dsh-bizyair` | 你的 npm 包名，例如 `dsh-bizyair` 或 `@you/dsh-bizyair` |
-| `package.json` `private` | `true` | 删掉（或 `false`），否则 npm 拒绝发布 |
-| `cordis.patch.yml` 的 `name` | `@local/dsh-bizyair` | 与新的包名一致 |
-| `package.json` `repository` / `homepage` | 无 | 你的 GitHub 地址 |
-
-改名后要重新安装一次本地 bundle（见下方命令），否则 profile 里仍指向旧包名：
+包名已改为 **`dsh-bizyair`**（已确认 npm 上可用），`private` 已移除，`cordis.patch.yml` 与 `client.js` 的模块 id 已同步。若改用 scoped 名（如 `@you/dsh-bizyair`），改 `package.json.name`、`cordis.patch.yml.name`、`client.js` 里的 `id:` 三处，然后重装：
 
 ```
 plugin_manager install_bundle  target=<该目录绝对路径>
@@ -135,7 +128,7 @@ node scripts/build-index.mjs --name dsh-bizyair --source git \
    npm publish --access public
    ```
    `files` 已限定只发布运行所需文件（`index.js`、`client.js`、`lib/*.js`、`data/catalog.json`、`locale/*`、`icon.svg`、`cordis.patch.yml`）。
-4. **构建 index 并托管**
+4. **构建 index 并托管**（CI 已自动化：`.github/workflows/release.yml`）
    ```bash
    node scripts/build-index.mjs --name <包名> --source npm --repo … --out market/index.json
    ```

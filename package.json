@@ -1,7 +1,6 @@
 {
-  "name": "@local/dsh-bizyair",
+  "name": "dsh-bizyair",
   "version": "0.9.1",
-  "private": true,
   "description": "BizyAir model plaza tools for DeepSeek Harness: discover, inspect, and run 235 image, video, and audio model APIs.",
   "type": "module",
   "main": "index.js",
@@ -51,5 +50,10 @@
     "build:catalog": "node scripts/build-catalog.mjs",
     "build:index": "node scripts/build-index.mjs",
     "check": "node --check index.js && node --check client.js && node --check lib/impl.js && node --check lib/api.js && node --check lib/catalog.js"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaochi/dsh-bizyair.git"
+  },
+  "homepage": "https://github.com/yaochi/dsh-bizyair"
 }

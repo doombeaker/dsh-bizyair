@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify bundle syntax
+        run: npm run check
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
+            echo "version already published; skipping"
+          else
+            npm publish --access public
+          fi
+
+      - name: Build plugin-market index
+        run: |
+          mkdir -p site
+          node scripts/build-index.mjs --source npm --out site/index.json
+          cp icon.svg site/icon.svg
+          cat site/index.json
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
