@@ -146,35 +146,39 @@ node scripts/build-index.mjs --name dsh-bizyair --source git \
 
 ---
 
-## 四、升级（实测结论，2026-11-06 / dsh 0.2.2-rc.1）
+## 四、升级（实测结论，2026-11-06/07 / dsh 0.2.2-rc.1）
 
-`install_bundle` 对已安装的同名包直接返回 `already-installed`，所以升级必须先卸载：
+平台层面有真正的升级能力：`pluginManager.updateBundle(name, version)`——先校验版本/兼容性，
+再用 HMR 卸载旧版、安装新版，**安装失败会自动回滚**。面板的「立即升级」就是调它。
+（agent 工具 `plugin_manager` 没有暴露 upgrade，市场 UI 也只提示，所以以前只能手动装卸。）
+
+### 两种情况，结论不同
+
+| 场景 | 是否需要重启 |
+|---|---|
+| **同一安装位置内换版本**（npm → npm） | **不需要**，实测 0.10.6 → 0.10.7 约 4 秒生效 |
+| **更换安装位置**（`link:` → npm，或反向） | **需要重启**。Loader 按包位置缓存模块，会继续跑旧位置的代码 |
+
+同位置升级能立即生效，是因为 `index.js` 用带时间戳的动态 import 加载实现：
+
+```js
+const impl = await import(`./lib/impl.js?v=${Date.now()}`)
+```
+
+卸载→安装后插件被重新 apply，`index.js` 虽被缓存，但 impl 会重新读取新文件。
+
+**例外**：如果新版本改动了 `index.js` 本身、`package.json` 的 exports/依赖，或 patch 行结构，
+仍然需要重启（此时表现为 `/health` 的 `pluginVersion` 与 `/update` 的 `installedVersion` 不一致）。
+
+### 判断与操作
 
 ```bash
-plugin_manager remove_bundle  target=dsh-bizyair
-plugin_manager install_bundle target=dsh-bizyair@0.10.4
+curl -s http://127.0.0.1:<port>/bizyair/api/health | jq .pluginVersion
+curl -s http://127.0.0.1:<port>/bizyair/api/update | jq '{current, installedVersion, updateAvailable, canSelfUpgrade}'
 ```
 
-**关键结论（更正了早期判断）**：安装成功不等于新代码在跑。DSH 的 Loader 按包位置缓存模块，
-把新版本装进同一个位置后，运行中的可能仍是上一代代码，直到重启应用。
-
-实测证据：
-
-```
-安装目录 package.json         0.10.3
-profile dependency            0.10.3
-/bizyair/api/health pluginVersion   0.10.4   ← 仍在跑旧工作区代码
-```
-
-判断方法：比较 `/bizyair/api/health` 的 `pluginVersion` 与 `/bizyair/api/update` 的 `installedVersion`。
-
-- 两者一致 → 新代码已生效
-- `installedVersion` 更新而 `pluginVersion` 未变 → **需要重启 DSH**
-
-面板的「立即升级」会调用 `pluginManager.updateBundle`（平台自带校验与失败回滚），并在轮询时区分这两种结果：
-生效则刷新页面，仅安装则提示"已安装 X，需要重启 DSH 后生效"。
-
-**例外**：本地 `link:` 安装无法一键升级，面板会提示改用复制指令或手动替换。
+- 面板横幅只在有更新时出现；`canSelfUpgrade=false` 时（例如 `link:` 安装）会给出复制指令
+- 手动路径：`remove_bundle` → `install_bundle <name>@<version>`
 
 ## 五、日常维护## 五、日常维护
 
