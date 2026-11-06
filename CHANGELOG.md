@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.9 — 2026-11-07
+
+- The API Key page shows the installed plugin version alongside the key path.
+- Update checks accept `?refresh=1`, used when the panel opens so a fresh release is noticed immediately.
+
 ## 0.10.8 — 2026-11-07
 
 - Fix: the panel and the tools resolved the API key through different paths, so a valid key could
