@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "title": "BizyAir model plaza",
+    "description": "Run BizyAir image, video, and audio models directly from chat: search the plaza, inspect parameters, estimate cost, and collect generated media."
+  },
+  "tools": {
+    "models": "Search models",
+    "model": "Model specification",
+    "generate": "Generate media",
+    "task": "Collect task result",
+    "upload": "Upload input file",
+    "price": "Estimate cost"
+  }
+}

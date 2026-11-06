@@ -1,0 +1,55 @@
+{
+  "name": "@local/dsh-bizyair",
+  "version": "0.9.1",
+  "private": true,
+  "description": "BizyAir model plaza tools for DeepSeek Harness: discover, inspect, and run 235 image, video, and audio model APIs.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/*.js",
+    "data/catalog.json",
+    "scripts/build-catalog.mjs",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "bizyair",
+    "image-generation",
+    "video-generation",
+    "text-to-speech",
+    "media"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0"
+  },
+  "scripts": {
+    "build:catalog": "node scripts/build-catalog.mjs",
+    "build:index": "node scripts/build-index.mjs",
+    "check": "node --check index.js && node --check client.js && node --check lib/impl.js && node --check lib/api.js && node --check lib/catalog.js"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "title": "BizyAir 模型广场",
+    "description": "在对话里直接使用 BizyAir 的图像、视频、音频模型：搜索模型、查看参数、预估费用并取回生成结果。"
+  },
+  "tools": {
+    "models": "搜索模型",
+    "model": "模型规格",
+    "generate": "生成内容",
+    "task": "领取任务结果",
+    "upload": "上传输入文件",
+    "price": "预估费用"
+  }
+}
