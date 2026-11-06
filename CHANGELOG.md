@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0 — 2026-11-06
+
+- Catalog now parses the model page's playground spec: per-field example defaults (including a sample prompt),
+  the site's field order, and precise min/max/step options. Models open ready to run.
+- Detail layout: header → sticky action bar (Generate, status, elapsed, reset, request JSON) → 参数 / 结果 tabs;
+  results keep their own 预览 / JSON switch. Generating switches to 结果 automatically.
+- Generating shows an optimistic "submitting" state immediately instead of waiting for the round trip.
+- One spinner per run: the primary button carries the running state; the status chip appears once settled.
+- Left model list jumps to the selected model centered, with a pinned "current model" row and scroll isolation.
+- Runs: server-side pagination (20/page), status filter, OSS-resized thumbnails (160px WebP, 3 per card),
+  and id-based merging so polling never duplicates or drops already loaded runs.
+- `/bizyair/api/health` reports the installed plugin version for upgrade verification.
+
 ## 0.9.3 — 2026-11-06
 
 - The published market index now carries author, repository, and homepage.

@@ -204,6 +204,65 @@ function parsePrice(markdown) {
   return blocks
 }
 
+/** Parse the playground spec embedded in a model page (escaped JSON in the flight payload). */
+export function parsePlayground(html) {
+  const marker = 'input_params'
+  let start = html.indexOf(marker)
+  if (start < 0) return null
+  const arrStart = html.indexOf('[', start)
+  if (arrStart < 0) return null
+  let depth = 0
+  let inString = false
+  let end = -1
+  for (let i = arrStart; i < html.length; i++) {
+    const ch = html[i]
+    if (inString) {
+      if (ch === '\\') { i++; continue }
+      if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '\\') { i++; continue }
+    if (ch === '"') { inString = true; continue }
+    if (ch === '[') depth++
+    else if (ch === ']') { depth--; if (depth === 0) { end = i; break } }
+  }
+  if (end < 0) return null
+  const raw = html.slice(arrStart, end + 1)
+  const json = raw.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+  try {
+    const value = JSON.parse(json)
+    return Array.isArray(value) ? value : null
+  } catch {
+    return null
+  }
+}
+
+function applyPlayground(model, playground) {
+  if (!Array.isArray(playground) || !playground.length) return
+  const defaults = {}
+  const order = {}
+  for (const field of playground) {
+    const name = field?.field_name
+    if (typeof name !== 'string' || !name) continue
+    const value = field.field_value
+    if (value !== '' && value !== null && value !== undefined) defaults[name] = value
+    if (Number.isFinite(field.sort)) order[name] = field.sort
+    const prop = model.schema?.properties?.[name]
+    const options = field.field_options
+    if (prop && options && typeof options === 'object') {
+      if (prop.minimum === undefined && Number.isFinite(options.min)) prop.minimum = options.min
+      if (prop.maximum === undefined && Number.isFinite(options.max)) prop.maximum = options.max
+      if (prop.multipleOf === undefined && Number.isFinite(options.step) && options.step > 0) prop.multipleOf = options.step
+    }
+  }
+  for (const [name, value] of Object.entries(defaults)) {
+    const prop = model.schema?.properties?.[name]
+    if (prop && prop.default === undefined) prop.default = value
+  }
+  model.defaults = defaults
+  model.order = order
+}
+
 function parseDetail(html) {
   const title = html.match(/<title>([^<]*)<\/title>/)?.[1]?.trim() ?? null
   const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1]
@@ -243,7 +302,7 @@ async function main() {
     const html = await fetchText(url, { cacheKey: `page/${endpoint}.html` })
     const detail = parseDetail(html)
     const parsed = parseParams(doc)
-    return {
+    const assembled = {
       endpoint,
       model,
       task: rest.join('/'),
@@ -261,6 +320,8 @@ async function main() {
       docsUrl: `${url}/llms.txt`,
       plazaUrl: url,
     }
+    applyPlayground(assembled, parsePlayground(html))
+    return assembled
   })
 
   const catalog = {

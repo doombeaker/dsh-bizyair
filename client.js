@@ -56,6 +56,9 @@ window.__ModuleLoader__.load({
         price: '查看价格', estimate: '预估费用', estimateEmpty: '填写参数后自动估算',
         browseAll: '在 BizyAir 浏览全部模型', recommend: '推荐模型',
         gImage: '文生图', gVideo: '文生视频', gVoice: '文生语音',
+        exampleTag: '示例', noResultYet: '还没有结果，点上方「生成」', currentModel: '当前模型',
+        submitting: '提交中…', submittingHint: '正在提交任务，等待 BizyAir 返回 request_id…',
+        loadMore: '加载更多', statusAll: '全部状态',
         run: '生成', running: '生成中', queued: '排队中', pending: '准备中',
         success: '已完成', failed: '失败', elapsed: '用时',
         result: '结果', json: '状态 JSON', requestParams: '请求 JSON',
@@ -99,6 +102,9 @@ window.__ModuleLoader__.load({
         price: 'Price', estimate: 'Estimated cost', estimateEmpty: 'Estimate appears as you fill parameters',
         browseAll: 'Browse all models on BizyAir', recommend: 'Recommended',
         gImage: 'Text to image', gVideo: 'Text to video', gVoice: 'Text to speech',
+        exampleTag: 'example', noResultYet: 'No result yet — press Generate above', currentModel: 'Current model',
+        submitting: 'Submitting…', submittingHint: 'Submitting the task and waiting for BizyAir to return a request_id…',
+        loadMore: 'Load more', statusAll: 'All statuses',
         run: 'Generate', running: 'Generating', queued: 'Queued', pending: 'Pending',
         success: 'Completed', failed: 'Failed', elapsed: 'elapsed',
         result: 'Result', json: 'Status JSON', requestParams: 'Request JSON',
@@ -309,9 +315,14 @@ window.__ModuleLoader__.load({
       return source ? coverUrl(source, width) : null
     }
 
-    function posterUrl(url) {
+    function posterUrl(url, width = 640) {
       const sep = url.includes('?') ? '&' : '?'
-      return `${url}${sep}x-oss-process=video/snapshot,t_1000,f_jpg,w_320`
+      return `${url}${sep}x-oss-process=video/snapshot,t_1000,f_jpg,w_${width}`
+    }
+
+    function thumbUrl(url, width = 160) {
+      const sep = url.includes('?') ? '&' : '?'
+      return `${url}${sep}x-oss-process=image/resize,w_${width}/format,webp`
     }
 
     function downloadHref(url, name) {
@@ -345,7 +356,7 @@ window.__ModuleLoader__.load({
     }
 
     function Field(props) {
-      const { prop, name, value, onChange, t } = props
+      const { prop, name, value, onChange, t, prefilled } = props
       const [busy, setBusy] = useState(0)
 
       const label = h('div', {
@@ -353,7 +364,12 @@ window.__ModuleLoader__.load({
       },
       h('span', { style: { color: 'inherit', fontWeight: 600 } }, name),
       prop.required ? h('span', { style: { color: theme.bad } }, '*') : null,
-      prop.default !== undefined ? h('span', { style: { opacity: 0.75 } }, `default ${JSON.stringify(prop.default)}`) : null,
+      prefilled ? h('span', {
+        style: {
+          fontSize: 9.5, padding: '0 5px', borderRadius: 4, lineHeight: '15px',
+          border: theme.subtle, color: theme.muted,
+        },
+      }, t.exampleTag) : null,
       cleanText(prop.description) ? h('span', { style: { opacity: 0.72 } }, cleanText(prop.description).split('\n')[0]) : null)
 
       if (prop.enum) {
@@ -690,8 +706,6 @@ window.__ModuleLoader__.load({
       const meta = h('div', {
         style: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 },
       },
-      h(StatusChip, { status: task.status, t }),
-      elapsed !== null ? h('span', { style: { color: theme.muted, fontSize: 12 } }, `${t.elapsed} ${elapsed}s`) : null,
       rawTask?.cost_times?.total_cost_time
         ? h('span', { style: { color: theme.muted, fontSize: 12 } },
           `${(rawTask.cost_times.total_cost_time / 1000).toFixed(1)}s`)
@@ -736,6 +750,7 @@ window.__ModuleLoader__.load({
         : (model.outputs ?? []).includes('audios') ? '\u266A' : '\u25A3'
       return h('button', {
         type: 'button', onClick: () => onSelect(model), className: 'bizyair-row',
+        'data-endpoint': model.endpoint,
         style: {
           display: 'flex', gap: 9, alignItems: 'center', width: '100%', textAlign: 'left',
           padding: '7px 8px', marginBottom: 5, borderRadius: 9, cursor: 'pointer',
@@ -779,30 +794,73 @@ window.__ModuleLoader__.load({
           h('span', null, model.task))))
     }
 
+    /**
+     * Merge a page into the loaded list. Polling replaces the first window,
+     * which shifts offsets as new runs arrive; merging by id keeps already
+     * loaded rows, refreshes their state, and prepends newcomers without
+     * duplicating or dropping entries.
+     */
+    function mergeRuns(current, incoming, append) {
+      if (append) {
+        const seen = new Set(current.map(run => run.id))
+        return [...current, ...incoming.filter(run => !seen.has(run.id))]
+      }
+      const remaining = new Map(current.map(run => [run.id, run]))
+      const next = []
+      for (const run of incoming) {
+        const previous = remaining.get(run.id)
+        next.push(previous ? { ...previous, ...run } : run)
+        remaining.delete(run.id)
+      }
+      for (const leftover of remaining.values()) next.push(leftover)
+      return next
+    }
+
     function RunsPane(props) {
       const { t, catalog, onReuse, onPreview } = props
+      const PAGE = 20
       const [runs, setRuns] = useState(null)
+      const [total, setTotal] = useState(0)
       const [error, setError] = useState(null)
       const [expanded, setExpanded] = useState(null)
       const [saving, setSaving] = useState(null)
       const [savedPaths, setSavedPaths] = useState({})
       const [query, setQuery] = useState('')
+      const [status, setStatus] = useState('')
+      const [loadingMore, setLoadingMore] = useState(false)
+      const runsRef = useRef([])
+      const headSizeRef = useRef(PAGE)
 
-      const load = async () => {
-        try {
-          const payload = await getJson('/bizyair/api/runs')
-          setRuns(payload.runs ?? [])
-          setError(null)
-        } catch (loadError) {
-          setError(loadError.message)
-        }
+      useEffect(() => { runsRef.current = runs ?? [] }, [runs])
+
+      async function fetchPage({ append = false } = {}) {
+        const limit = append ? PAGE : Math.max(PAGE, headSizeRef.current)
+        const offset = append ? headSizeRef.current : 0
+        const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+        if (status) params.set('status', status)
+        const payload = await getJson(`/bizyair/api/runs?${params.toString()}`)
+        setTotal(payload.total ?? 0)
+        setRuns(current => mergeRuns(current ?? [], payload.runs ?? [], append))
+        // Coverage grows only by the contiguous window this page represents.
+        headSizeRef.current = append
+          ? headSizeRef.current + PAGE
+          : Math.max(headSizeRef.current, payload.runs.length)
+        setError(null)
       }
 
       useEffect(() => {
-        load()
-        const timer = setInterval(load, 4000)
+        fetchPage().catch(loadError => setError(loadError.message))
+        const timer = setInterval(() => {
+          const alive = runsRef.current.some(run => run.status !== 'success' && run.status !== 'failed')
+          if (alive) fetchPage().catch(() => {})
+        }, 4000)
         return () => clearInterval(timer)
-      }, [])
+      }, [status])
+
+      async function more() {
+        setLoadingMore(true)
+        try { await fetchPage({ append: true }) } catch (loadError) { setError(loadError.message) } finally { setLoadingMore(false) }
+      }
 
       async function save(run) {
         setSaving(run.id)
@@ -819,13 +877,14 @@ window.__ModuleLoader__.load({
       async function remove(run) {
         try {
           await postJson('/bizyair/post/runs/delete', { id: run.id })
-          setRuns(current => current.filter(item => item.id !== run.id))
+          setRuns(current => (current ?? []).filter(item => item.id !== run.id))
+          setTotal(value => Math.max(0, value - 1))
         } catch (removeError) {
           setError(removeError.message)
         }
       }
 
-      if (error) return h('div', { style: { padding: 20, color: theme.bad, fontSize: 13 } }, error)
+      if (error && !runs) return h('div', { style: { padding: 20, color: theme.bad, fontSize: 13 } }, error)
       if (!runs) {
         return h('div', { style: { padding: 20, color: theme.muted, display: 'flex', gap: 10, alignItems: 'center' } },
           h(Spinner, null), t.loading)
@@ -855,44 +914,43 @@ window.__ModuleLoader__.load({
         group.items.push(run)
       }
 
+      function thumb(url, index, urls) {
+        const isImage = IMAGE_EXT.test(url)
+        const isVideo = VIDEO_EXT.test(url)
+        const isAudio = AUDIO_EXT.test(url)
+        return h('button', {
+          key: url, type: 'button', title: 'preview', onClick: () => onPreview?.(urls, index),
+          style: {
+            width: 84, height: 84, borderRadius: 8, border: theme.border, background: theme.softer,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+            padding: 0, cursor: 'zoom-in', color: 'inherit', font: 'inherit',
+          },
+        }, isImage
+          ? h('img', {
+            src: thumbUrl(url), alt: '', loading: 'lazy',
+            style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
+          })
+          : isVideo
+            ? h('div', { style: { position: 'relative', width: '100%', height: '100%', background: '#000' } },
+              h('img', {
+                src: posterUrl(url, 320), alt: '', loading: 'lazy',
+                style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+              }),
+              h('span', {
+                style: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#fff', fontSize: 18, textShadow: '0 1px 4px rgba(0,0,0,0.65)' },
+              }, '▶'))
+            : h('span', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: theme.muted } },
+              h('span', { style: { fontSize: isAudio ? 20 : 16, lineHeight: 1 } }, isAudio ? '♪' : 'FILE'),
+              h('span', { style: { fontSize: 10 } }, isAudio ? 'audio' : 'file')))
+      }
+
       function card(run) {
         const model = catalog?.models.find(item => item.endpoint === run.endpoint)
         const title = run.title ?? model?.title ?? run.endpoint
         const urls = collectUrls(run.outputs)
-        const thumbs = urls.slice(0, 6).map((url, thumbIndex) => {
-          const isImage = IMAGE_EXT.test(url)
-          const isVideo = VIDEO_EXT.test(url)
-          const isAudio = AUDIO_EXT.test(url)
-          const glyph = isVideo ? '▶' : isAudio ? '♪' : 'FILE'
-          return h('button', {
-            key: url, type: 'button', title: 'preview', onClick: () => onPreview?.(urls, thumbIndex),
-            style: {
-              width: 84, height: 84, borderRadius: 8, border: theme.border,
-              background: theme.softer, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden', padding: 0, cursor: 'zoom-in', color: 'inherit', font: 'inherit',
-            },
-          }, isImage
-            ? h('img', {
-              src: url, alt: '',
-              style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
-            })
-            : isVideo
-              ? h('div', { style: { position: 'relative', width: '100%', height: '100%', background: '#000' } },
-                h('img', {
-                  src: posterUrl(url), alt: '',
-                  style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-                }),
-                h('span', {
-                  style: {
-                    position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
-                    color: '#fff', fontSize: 18, textShadow: '0 1px 4px rgba(0,0,0,0.65)',
-                  },
-                }, '▶'))
-              : h('span', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: theme.muted } },
-                h('span', { style: { fontSize: isAudio ? 20 : 16, lineHeight: 1 } }, glyph),
-                h('span', { style: { fontSize: 10 } }, isAudio ? 'audio' : 'file')))
-        })
-
+        const shown = urls.slice(0, 3)
+        const thumbs = shown.map((url, index) => thumb(url, index, urls))
+        const rest = urls.length - shown.length
         const prompt = run.params?.prompt ?? run.params?.input ?? run.params?.text ?? ''
         const elapsedMs = run.costTimes?.total_cost_time
         const isOpen = expanded === run.id
@@ -905,14 +963,7 @@ window.__ModuleLoader__.load({
                 margin: 0, padding: 10, borderRadius: 8, border: theme.subtle, background: theme.softer,
                 fontSize: 11, lineHeight: 1.5, overflow: 'auto', maxHeight: 220,
               },
-            }, JSON.stringify({ endpoint: run.endpoint, params: run.params, outputs: run.outputs, message: run.message ?? null }, null, 2)),
-            urls.length
-              ? h('div', { style: { marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' } },
-                urls.map((url, outIndex) => h('button', {
-                  key: url, type: 'button', style: smallButton,
-                  onClick: () => onPreview?.(urls, outIndex),
-                }, `${outIndex + 1}. ${IMAGE_EXT.test(url) ? 'image' : VIDEO_EXT.test(url) ? 'video' : AUDIO_EXT.test(url) ? 'audio' : 'file'}`)))
-              : null)
+            }, JSON.stringify({ endpoint: run.endpoint, params: run.params, outputs: run.outputs, message: run.message ?? null }, null, 2)))
           : null
 
         return h('div', {
@@ -927,15 +978,19 @@ window.__ModuleLoader__.load({
         h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 } },
           h(StatusChip, { status: run.status, t }),
           h('span', { style: { fontWeight: 600, fontSize: 13 } }, title),
-          h(Chip, null, run.endpoint),
+          h('span', { style: { color: theme.muted, fontSize: 10.5 } }, run.endpoint),
           h('span', { style: { color: theme.muted, fontSize: 11 } }, run.createdAt ? new Date(run.createdAt).toLocaleTimeString() : ''),
           elapsedMs ? h('span', { style: { color: theme.muted, fontSize: 11 } }, `${(elapsedMs / 1000).toFixed(1)}s`) : null,
           run.estimate?.usd != null ? h('span', { style: { color: theme.muted, fontSize: 11 } }, `~$${run.estimate.usd}`) : null),
         prompt ? h('div', { style: { color: theme.muted, fontSize: 12, marginBottom: 8, lineHeight: 1.5 } },
-          String(prompt).slice(0, 220)) : null,
+          String(prompt).slice(0, 200)) : null,
         run.message && run.status === 'failed'
           ? h('div', { style: { color: theme.bad, fontSize: 12, marginBottom: 6 } }, run.message) : null,
-        thumbs.length ? h('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 } }, thumbs) : null,
+        (thumbs.length || rest > 0)
+          ? h('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' } },
+            thumbs,
+            rest > 0 ? h('span', { style: { color: theme.muted, fontSize: 11 } }, `+${rest}`) : null)
+          : null,
         h('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
           h('button', { type: 'button', style: smallButton, onClick: () => setExpanded(isOpen ? null : run.id) }, isOpen ? t.collapse : t.expand),
           urls.length ? h('button', {
@@ -951,20 +1006,29 @@ window.__ModuleLoader__.load({
         style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' },
       },
       h('div', { style: { fontSize: 13.5, fontWeight: 700 } }, t.runsTitle),
+      h('span', { style: { color: theme.muted, fontSize: 11.5 } }, `${runs.length}/${total}`),
       active.length
         ? h('span', { style: { color: theme.accent, fontSize: 12, display: 'inline-flex', gap: 6, alignItems: 'center' } },
           h(Spinner, null), `${active.length} ${t.runsActive}`)
         : null,
       h('input', {
         value: query, placeholder: t.runsSearch, onChange: event => setQuery(event.target.value),
-        style: { ...inputStyle, marginLeft: 'auto', maxWidth: 240 },
+        style: { ...inputStyle, marginLeft: 'auto', maxWidth: 220 },
       }),
+      h('select', {
+        value: status, onChange: event => setStatus(event.target.value),
+        style: { ...inputStyle, width: 'auto', padding: '5px 8px' },
+      },
+      h('option', { value: '' }, t.statusAll),
+      h('option', { value: 'active' }, t.runsActive),
+      h('option', { value: 'success' }, t.success),
+      h('option', { value: 'failed' }, t.failed)),
       h('button', {
         type: 'button', style: smallButton,
-        onClick: async () => { await postJson('/bizyair/post/runs/clear', {}); load() },
+        onClick: async () => { await postJson('/bizyair/post/runs/clear', {}); setTotal(0); setRuns([]) },
       }, t.runsClear))
 
-      if (!runs.length) {
+      if (!total) {
         return h('div', { style: { padding: 16 } }, header,
           h('div', { style: { color: theme.muted, fontSize: 13, padding: '18px 0' } }, t.runsEmpty))
       }
@@ -983,7 +1047,12 @@ window.__ModuleLoader__.load({
           h('span', { style: { fontWeight: 600 } }, group.label),
           h('span', { style: { opacity: 0.7 } }, `${group.items.length}`),
           h('span', { style: { flex: 1, height: 1, background: 'color-mix(in srgb, currentColor 8%, transparent)' } })),
-          group.items.map(card))))
+          group.items.map(card))),
+        runs.length < total
+          ? h('div', { style: { display: 'flex', justifyContent: 'center', marginTop: 8 } },
+            h('button', { type: 'button', style: secondaryButton(loadingMore), disabled: loadingMore, onClick: more },
+              loadingMore ? h(Spinner, null) : null, loadingMore ? t.loading : t.loadMore))
+          : null)
     }
 
     function SettingsPane(props) {
@@ -1107,11 +1176,15 @@ window.__ModuleLoader__.load({
       const [rawTask, setRawTask] = useState(null)
       const [result, setResult] = useState(null)
       const [view, setView] = useState('result')
+      const [detailTab, setDetailTab] = useState('params')
+      const [submitting, setSubmitting] = useState(false)
+      const [touched, setTouched] = useState(() => new Set())
       const [now, setNow] = useState(Date.now())
       const [saving, setSaving] = useState(false)
       const [savedPath, setSavedPath] = useState(null)
       const [copied, setCopied] = useState(null)
       const [preview, setPreview] = useState(null)
+      const listRef = useRef(null)
       const [keyStatus, setKeyStatus] = useState(null)
       const [featured, setFeatured] = useState(null)
 
@@ -1178,15 +1251,35 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         if (!selected) return
+        const container = listRef.current
+        const row = container?.querySelector(`[data-endpoint="${selected.endpoint.replace(/"/g, '\\"')}"]`)
+        if (!container || !row) return
+        // Only move the list's own scrollTop: scrollIntoView() would also scroll
+        // ancestor containers and drag the parameter pane out of view.
+        const listRect = container.getBoundingClientRect()
+        const rowRect = row.getBoundingClientRect()
+        // Center the target when it is far from the middle; leave near rows alone so
+        // clicking a visible row does not make the list jump for no reason.
+        const listCenter = listRect.top + listRect.height / 2
+        const rowCenter = rowRect.top + rowRect.height / 2
+        if (Math.abs(rowCenter - listCenter) <= listRect.height * 0.3) return
+        const desired = container.scrollTop + (rowRect.top - listRect.top) - (listRect.height - rowRect.height) / 2
+        const max = container.scrollHeight - container.clientHeight
+        container.scrollTop = Math.max(0, Math.min(desired, max))
+      }, [selected?.endpoint])
+
+      useEffect(() => {
+        if (!selected) return
         uiState.endpoint = selected.endpoint
         const reuse = reuseRef.current
         reuseRef.current = null
         const cached = uiState.params[selected.endpoint]
+        const base = { ...(selected.example ?? {}), ...(selected.defaults ?? {}) }
         const initial = (reuse && reuse.endpoint === selected.endpoint)
-          ? { ...(selected.example ?? {}), ...reuse.params }
+          ? { ...base, ...reuse.params }
           : cached
-            ? { ...(selected.example ?? {}), ...cached }
-            : { ...(selected.example ?? {}) }
+            ? { ...base, ...cached }
+            : base
         for (const [name, prop] of Object.entries(selected.schema?.properties ?? {})) {
           if (initial[name] === undefined && prop.default !== undefined) initial[name] = prop.default
           if (prop.enum && initial[name] === undefined) initial[name] = prop.enum[0]
@@ -1198,7 +1291,8 @@ window.__ModuleLoader__.load({
           if (typeof initial[name] === 'string' && initial[name].startsWith('<')) initial[name] = ''
         }
         setParams(initial)
-        setTask(null); setResult(null); setRawTask(null); setSavedPath(null); setView('result')
+        setTask(null); setResult(null); setRawTask(null); setSavedPath(null)
+        setView('result'); setDetailTab('params'); setTouched(new Set())
       }, [selected])
 
       useEffect(() => {
@@ -1228,6 +1322,12 @@ window.__ModuleLoader__.load({
 
       function setParam(name, value) {
         setParams(current => ({ ...current, [name]: value }))
+        setTouched(current => {
+          if (current.has(name)) return current
+          const next = new Set(current)
+          next.add(name)
+          return next
+        })
       }
 
       function markCopied(what, text) {
@@ -1250,16 +1350,19 @@ window.__ModuleLoader__.load({
       }
 
       async function run() {
-        if (!selected || missingRequired.length || busy) return
+        if (!selected || missingRequired.length || busy || submitting) return
         if (estimate?.usd != null && estimate.usd >= 20) {
           const ok = typeof window.confirm === 'function' ? window.confirm(t.confirmCost.replace('$AMOUNT', estimate.usd)) : true
           if (!ok) return
         }
         setResult(null); setRawTask(null); setError(null); setSavedPath(null)
+        setSubmitting(true)
+        setDetailTab('result')
         try {
           const submitted = await postJson('/bizyair/post/generate', { endpoint: selected.endpoint, params })
           startedAtRef.current = Date.now()
           setTask({ request_id: submitted.request_id, status: 'running', startedAt: startedAtRef.current })
+          setDetailTab('result')
           setNow(Date.now())
           if (pollRef.current) clearInterval(pollRef.current)
           pollRef.current = setInterval(async () => {
@@ -1280,6 +1383,9 @@ window.__ModuleLoader__.load({
           }, 4000)
         } catch (runError) {
           setError(runError.message)
+          setDetailTab('params')
+        } finally {
+          setSubmitting(false)
         }
       }
 
@@ -1378,8 +1484,41 @@ window.__ModuleLoader__.load({
             }, `← ${t.recommend}`)
             : null))
 
+      const selectedHidden = !!selected && !models.some(model => model.endpoint === selected.endpoint)
+
+      const currentBar = selected ? h('div', {
+        style: {
+          display: 'flex', gap: 8, alignItems: 'center', padding: '6px 10px',
+          borderTop: theme.border, borderBottom: theme.border, background: theme.softer,
+        },
+      },
+      h('span', { style: { color: theme.muted, fontSize: 10.5, whiteSpace: 'nowrap' } }, t.currentModel),
+      h('span', {
+        title: selected.title,
+        style: {
+          flex: 1, minWidth: 0, fontWeight: 600, fontSize: 11.5,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        },
+      }, selected.title),
+      selectedHidden
+        ? h('button', {
+          type: 'button', style: { ...iconButton, fontSize: 10, padding: '2px 6px' },
+          onClick: () => { setQuery(''); setKind(''); setEdition('') },
+        }, t.clearFilters)
+        : null,
+      h('button', {
+        type: 'button', title: t.recommend, style: iconButton,
+        onClick: () => { setSelected(null); uiState.endpoint = null },
+      }, '×')) : null
+
       const list = models.length
-        ? h('div', { className: 'bizyair-scroll', style: { overflowY: 'auto', flex: 1, padding: '0 8px 12px' } },
+        ? h('div', {
+          ref: listRef, className: 'bizyair-scroll',
+          style: {
+            overflowY: 'auto', overscrollBehavior: 'contain', flex: 1, minHeight: 0,
+            padding: '0 8px 240px',
+          },
+        },
           models.map(model => h(ModelRow, {
             key: model.endpoint, model, selected,
             onSelect: target => setSelected(current => {
@@ -1397,10 +1536,10 @@ window.__ModuleLoader__.load({
 
       const left = h('div', {
         style: { width: 300, borderRight: theme.border, display: 'flex', flexDirection: 'column', minHeight: 0 },
-      }, filters, list)
+      }, filters, currentBar, list)
 
       const meta = selected ? h('div', {
-        style: { display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16, fontSize: 12.5 },
+        style: { display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, fontSize: 12.5 },
       },
       h('a', {
         href: PRICE_URL, target: '_blank', rel: 'noreferrer',
@@ -1412,26 +1551,63 @@ window.__ModuleLoader__.load({
       selected.docsUrl ? h('a', { href: selected.docsUrl, target: '_blank', rel: 'noreferrer', style: { fontSize: 12 } }, t.docs) : null,
       selected.plazaUrl ? h('a', { href: selected.plazaUrl, target: '_blank', rel: 'noreferrer', style: { fontSize: 12 } }, t.plaza) : null) : null
 
+      const orderOf = name => {
+        const value = selected?.order?.[name]
+        return Number.isFinite(value) ? value : 1000
+      }
+
+      const headerBlock = selected
+        ? h('div', null,
+          h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
+            h('h2', { style: { fontSize: 17, margin: 0 } }, selected.title),
+            h(Chip, null, selected.edition),
+            h(Chip, null, selected.outputs.join('+')),
+            h(Chip, null, selected.endpoint)),
+          h('div', { style: { color: theme.muted, fontSize: 12.5, margin: '8px 0 12px', lineHeight: 1.55 } }, selected.description),
+          meta)
+        : null
+
+      const fieldEntries = selected
+        ? Object.entries(selected.schema?.properties ?? {})
+          .map(([name, prop], index) => ({ name, prop, index }))
+          .sort((a, b) => orderOf(a.name) - orderOf(b.name) || a.index - b.index)
+        : []
+
       const fields = selected ? h('div', {
         style: {
           display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: '0 18px', maxWidth: 980, alignItems: 'start',
         },
       },
-      Object.entries(selected.schema?.properties ?? {}).map(([name, prop]) => {
+      fieldEntries.map(({ name, prop }) => {
         const wide = LONG_FIELDS.test(name) || prop.type === 'array' || (prop.enum?.length ?? 0) > 8
+        const prefilled = !!selected.defaults && Object.hasOwn(selected.defaults, name) && !touched.has(name)
         return h('div', { key: name, style: { gridColumn: wide ? '1 / -1' : 'auto', minWidth: 0 } },
-          h(Field, { prop, name, t, value: params[name], onChange: value => setParam(name, value) }))
+          h(Field, { prop, name, t, prefilled, value: params[name], onChange: value => setParam(name, value) }))
       })) : null
 
-      const actions = selected ? h('div', {
-        style: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' },
+      const runDisabled = busy || submitting || missingRequired.length > 0
+
+      const actionBar = selected ? h('div', {
+        style: {
+          position: 'sticky', top: 0, zIndex: 6, display: 'flex', gap: 10, alignItems: 'center',
+          flexWrap: 'wrap', padding: '10px 0', margin: '0 0 12px',
+          background: 'Canvas', borderBottom: theme.border,
+        },
       },
       h('button', {
-        type: 'button', onClick: run, disabled: busy || missingRequired.length > 0,
-        style: primaryButton(busy || missingRequired.length > 0),
-      }, busy ? h(React.Fragment, null, h(Spinner, null), t.running) : t.run),
-      h('button', { type: 'button', onClick: () => setParams({ ...(selected.example ?? {}) }), style: smallButton }, t.reset),
+        type: 'button', onClick: run, disabled: runDisabled, style: primaryButton(runDisabled),
+      }, submitting
+        ? h(React.Fragment, null, h(Spinner, null), t.submitting)
+        : busy
+          ? h(React.Fragment, null, h(Spinner, null), `${task?.status === 'queued' ? t.queued : t.running}${elapsed !== null ? ` · ${elapsed}s` : ''}`)
+          : t.run),
+      task && !busy ? h(StatusChip, { status: task.status, t }) : null,
+      elapsed !== null && !busy ? h('span', { style: { color: theme.muted, fontSize: 12 } }, `${t.elapsed} ${elapsed}s`) : null,
+      h('button', {
+        type: 'button', style: smallButton,
+        onClick: () => setParams({ ...(selected.example ?? {}), ...(selected.defaults ?? {}) }),
+      }, t.reset),
       h('button', {
         type: 'button', style: smallButton,
         onClick: () => markCopied('params', JSON.stringify({ endpoint: selected.endpoint, params }, null, 2)),
@@ -1439,6 +1615,35 @@ window.__ModuleLoader__.load({
       missingRequired.length
         ? h('span', { style: { color: theme.warn, fontSize: 12 } }, `${t.missingRequired}: ${missingRequired.join(', ')}`)
         : null) : null
+
+      const tabRow = selected ? h('div', {
+        style: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12 },
+      },
+      h('button', {
+        type: 'button', style: segmentStyle(detailTab === 'params'), onClick: () => setDetailTab('params'),
+      }, t.params),
+      h('button', {
+        type: 'button', style: segmentStyle(detailTab === 'result'), onClick: () => setDetailTab('result'),
+      }, t.result,
+      task ? h('span', { style: { marginLeft: 6 } }, h(Dot, {
+        color: task.status === 'failed' ? theme.bad : task.status === 'success' ? theme.ok : theme.accent,
+      })) : null)) : null
+
+      const paramsPane = selected
+        ? h('div', null, fields, h('div', { style: { color: theme.muted, fontSize: 11.5, marginTop: 6 } }, t.costNote))
+        : null
+
+      const submittingPane = submitting && !task
+        ? h('div', { style: { display: 'flex', gap: 10, alignItems: 'center', color: theme.muted, fontSize: 13, padding: '10px 0' } },
+          h(Spinner, null), t.submittingHint)
+        : null
+
+      const resultPane = submittingPane ?? (task
+        ? h(TaskPanel, {
+          task, rawTask, result, view, setView, t, elapsed, saving, savedPath,
+          saveAll, markCopied, copied, onOpen: openPreview,
+        })
+        : h('div', { style: { color: theme.muted, fontSize: 13, padding: '10px 0' } }, t.noResultYet))
 
       const featuredGroups = useMemo(() => {
         const planned = [
@@ -1511,21 +1716,7 @@ window.__ModuleLoader__.load({
         }, `${t.browseAll} ↗`))
 
       const detail = selected
-        ? h('div', null,
-          h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
-            h('h2', { style: { fontSize: 17, margin: 0 } }, selected.title),
-            h(Chip, null, selected.edition),
-            h(Chip, null, selected.outputs.join('+')),
-            h(Chip, null, selected.endpoint)),
-          h('div', { style: { color: theme.muted, fontSize: 12.5, margin: '8px 0 14px', lineHeight: 1.55 } }, selected.description),
-          meta,
-          fields,
-          actions,
-          h('div', { style: { color: theme.muted, fontSize: 11.5, marginTop: 6 } }, t.costNote),
-          h(TaskPanel, {
-            task, rawTask, result, view, setView, t, elapsed, saving, savedPath,
-            saveAll, markCopied, copied, onOpen: openPreview,
-          }))
+        ? h('div', null, headerBlock, actionBar, tabRow, detailTab === 'params' ? paramsPane : resultPane)
         : emptyDetail
 
       const authProblem = !!error && /401|unauthor|api key|invalid/i.test(error)
@@ -1556,7 +1747,12 @@ window.__ModuleLoader__.load({
       else if (tab === 'runs') body = h(RunsPane, { t, catalog, onReuse: reuseRun, onPreview: openPreview })
       else body = catalog ? modelsBody : loading
 
-      return h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 } },
+      return h('div', {
+        style: {
+          display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0,
+          maxHeight: 'calc(100vh - 120px)', overflow: 'hidden',
+        },
+      },
         h('style', null, SPIN_STYLE),
         header,
         body,
@@ -1575,7 +1771,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.9.1', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui10', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',
