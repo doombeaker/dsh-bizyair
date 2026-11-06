@@ -63,7 +63,9 @@ window.__ModuleLoader__.load({
         updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
         copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本', lastUpgrade: '上次升级',
         upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。\n\n升级过程中请不要重启 DSH。继续？',
-        upgrading: '正在升级…', upgradeDone: '升级完成，正在刷新页面…',
+        upgrading: '正在升级…',
+        upgradeDone: '升级完成，请手动刷新页面以加载新版本。',
+        reloadPage: '刷新页面',
         upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
         upgradeInstalledRestart: '已安装 {latest}，需要重启 DSH 后生效（当前运行的仍是旧代码）。',
         upgradeFailed: '升级失败：{error}',
@@ -120,7 +122,9 @@ window.__ModuleLoader__.load({
         updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
         copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version', lastUpgrade: 'Last upgrade',
         upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically.\n\nDo not restart DSH while the upgrade is running. Continue?',
-        upgrading: 'Upgrading…', upgradeDone: 'Upgrade finished, reloading…',
+        upgrading: 'Upgrading…',
+        upgradeDone: 'Upgrade finished — refresh the page to load the new version.',
+        reloadPage: 'Refresh page',
         upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
         upgradeInstalledRestart: 'Installed {latest}; restart DSH for it to take effect (the old code is still running).',
         upgradeFailed: 'Upgrade failed: {error}',
@@ -1234,6 +1238,7 @@ window.__ModuleLoader__.load({
       const [keyStatus, setKeyStatus] = useState(null)
       const [updateInfo, setUpdateInfo] = useState(null)
       const [upgrading, setUpgrading] = useState(false)
+      const [upgradeReady, setUpgradeReady] = useState(false)
       const [upgradeNote, setUpgradeNote] = useState(null)
       const [featured, setFeatured] = useState(null)
 
@@ -1409,8 +1414,7 @@ window.__ModuleLoader__.load({
             if (outcome?.phase === 'done') {
               if (outcome.application === 'applied' && info.current === latest) {
                 setUpgradeNote({ tone: 'ok', text: t.upgradeDone })
-                await new Promise(resolve => setTimeout(resolve, 1200))
-                window.location.reload()
+                setUpgradeReady(true)
                 return
               }
               if (outcome.application === 'restart-required' || outcome.application === 'applied') {
@@ -1429,8 +1433,7 @@ window.__ModuleLoader__.load({
 
             if (info?.current === latest) {
               setUpgradeNote({ tone: 'ok', text: t.upgradeDone })
-              await new Promise(resolve => setTimeout(resolve, 1200))
-              window.location.reload()
+              setUpgradeReady(true)
               return
             }
             // Only as a last resort, and never during the swap window itself.
@@ -1572,12 +1575,17 @@ window.__ModuleLoader__.load({
         h('span', { style: { color: theme.muted, fontSize: 11.5 } },
           updateInfo.canSelfUpgrade ? t.updateHint : t.upgradeLinkInstall),
         updateBannerNote(upgrading, upgradeNote, t),
-        updateInfo.canSelfUpgrade
+        upgradeReady
           ? h('button', {
-            type: 'button', onClick: selfUpgrade, disabled: upgrading,
-            style: { ...primaryButton(upgrading), marginLeft: 'auto', padding: '6px 14px', fontSize: 12 },
-          }, upgrading ? h(React.Fragment, null, h(Spinner, null), t.upgrading) : t.upgradeNow)
-          : null,
+            type: 'button', onClick: () => window.location.reload(),
+            style: { ...primaryButton(false), marginLeft: 'auto', padding: '6px 14px', fontSize: 12 },
+          }, t.reloadPage)
+          : updateInfo.canSelfUpgrade
+            ? h('button', {
+              type: 'button', onClick: selfUpgrade, disabled: upgrading,
+              style: { ...primaryButton(upgrading), marginLeft: 'auto', padding: '6px 14px', fontSize: 12 },
+            }, upgrading ? h(React.Fragment, null, h(Spinner, null), t.upgrading) : t.upgradeNow)
+            : null,
         h('button', {
           type: 'button', style: { ...smallButton, marginLeft: updateInfo.canSelfUpgrade ? 0 : 'auto' },
           onClick: () => markCopied(
@@ -1934,7 +1942,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui17', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui18', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

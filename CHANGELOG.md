@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.14 — 2026-11-07
+
+- The upgrade no longer reloads the page by itself. Reloading while the client bundle table was still
+  rebuilding could fail the Web boot with `dsh-bizyair: import failed`; the banner now offers an explicit
+  Refresh button once the new version is confirmed running.
+
 ## 0.10.13 — 2026-11-07
 
 - The upgrade confirmation warns not to restart DSH while the upgrade runs.
