@@ -30,10 +30,6 @@
         "zh": "在对话里直接使用 BizyAir 的图像、视频、音频模型：搜索模型、查看参数、预估费用并取回生成结果。"
       },
       "icon": "icon.svg",
-      "author": "yaochi",
-      "repository": {
-        "url": "https://github.com/yaochi/dsh-bizyair"
-      },
       "metadata": {
         "category": "media",
         "keywords": [
@@ -49,7 +45,7 @@
       "versions": [
         {
           "version": "0.9.1",
-          "publishTimestamp": 1793966583,
+          "publishTimestamp": 1793966979,
           "source": {
             "type": "npm"
           },

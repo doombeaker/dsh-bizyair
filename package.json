@@ -53,7 +53,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yaochi/dsh-bizyair.git"
+    "url": "https://github.com/doombeaker/dsh-bizyair.git"
   },
-  "homepage": "https://github.com/yaochi/dsh-bizyair"
+  "homepage": "https://github.com/doombeaker/dsh-bizyair",
+  "author": "doombeaker"
 }

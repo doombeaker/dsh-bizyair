@@ -103,7 +103,7 @@ plugin_manager install_bundle  target=<该目录绝对路径>
 ```bash
 # npm 分发
 node scripts/build-index.mjs --name dsh-bizyair --source npm \
-  --author yaochi --repository https://github.com/you/dsh-bizyair \
+  --author doombeaker --repository https://github.com/you/dsh-bizyair \
   --out market/index.json
 
 # git 分发（会读取当前 HEAD commit）
