@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.3 — 2026-11-06
+
+- One-click upgrade: the panel detects a newer published version via `pluginManager.listVersions`
+  and `pluginManager.updateBundle`, with an explicit confirmation, automatic rollback by the platform,
+  and progress polling that reloads the page when the new version comes up.
+- Local link installs are detected and told to upgrade manually instead.
+
 ## 0.10.2 — 2026-11-06
 
 - Shipped bundle config contains no absolute paths: the key lives at `$DSH_HOME/bizyair.key`

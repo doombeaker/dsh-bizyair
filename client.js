@@ -59,6 +59,16 @@ window.__ModuleLoader__.load({
         exampleTag: '示例', noResultYet: '还没有结果，点上方「生成」', currentModel: '当前模型',
         submitting: '提交中…', submittingHint: '正在提交任务，等待 BizyAir 返回 request_id…',
         loadMore: '加载更多', statusAll: '全部状态',
+        updateAvailable: '发现新版本 {latest}（当前 {current}）',
+        updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
+        copyUpgrade: '复制升级指令', upgradeNow: '立即升级',
+        upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。继续？',
+        upgrading: '正在升级…', upgradeDone: '升级完成，正在刷新页面…',
+        upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
+        upgradeFailed: '升级失败：{error}',
+        upgradeLinkInstall: '当前是本地链接安装，无法一键升级，请使用复制指令或手动替换。',
+        upgradePrompt: '帮我升级 DSH 插件 dsh-bizyair 到 {latest}：先调用 plugin_manager remove_bundle（target=dsh-bizyair），再调用 plugin_manager install_bundle（target=dsh-bizyair@{latest}）。升级后请确认 /bizyair/api/health 的 pluginVersion 是新版本。',
+        releaseNotes: '更新日志',
         run: '生成', running: '生成中', queued: '排队中', pending: '准备中',
         success: '已完成', failed: '失败', elapsed: '用时',
         result: '结果', json: '状态 JSON', requestParams: '请求 JSON',
@@ -105,6 +115,16 @@ window.__ModuleLoader__.load({
         exampleTag: 'example', noResultYet: 'No result yet — press Generate above', currentModel: 'Current model',
         submitting: 'Submitting…', submittingHint: 'Submitting the task and waiting for BizyAir to return a request_id…',
         loadMore: 'Load more', statusAll: 'All statuses',
+        updateAvailable: 'Update available: {latest} (installed {current})',
+        updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
+        copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now',
+        upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically. Continue?',
+        upgrading: 'Upgrading…', upgradeDone: 'Upgrade finished, reloading…',
+        upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
+        upgradeFailed: 'Upgrade failed: {error}',
+        upgradeLinkInstall: 'This profile uses a local link install; use the copied request or replace it manually.',
+        upgradePrompt: 'Upgrade the DSH plugin dsh-bizyair to {latest}: call plugin_manager remove_bundle (target=dsh-bizyair), then plugin_manager install_bundle (target=dsh-bizyair@{latest}). Afterwards confirm /bizyair/api/health reports pluginVersion {latest}.',
+        releaseNotes: 'Changelog',
         run: 'Generate', running: 'Generating', queued: 'Queued', pending: 'Pending',
         success: 'Completed', failed: 'Failed', elapsed: 'elapsed',
         result: 'Result', json: 'Status JSON', requestParams: 'Request JSON',
@@ -273,6 +293,17 @@ window.__ModuleLoader__.load({
           boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 18%, transparent)`,
         },
       })
+    }
+
+    function updateBannerNote(upgrading, note, t) {
+      if (upgrading && !note) return h('span', { style: { color: theme.muted, fontSize: 11.5 } }, t.upgrading)
+      if (!note) return null
+      return h('span', {
+        style: {
+          fontSize: 11.5,
+          color: note.tone === 'ok' ? theme.ok : note.tone === 'bad' ? theme.bad : theme.warn,
+        },
+      }, note.text)
     }
 
     function Chip(props) {
@@ -1186,6 +1217,9 @@ window.__ModuleLoader__.load({
       const [preview, setPreview] = useState(null)
       const listRef = useRef(null)
       const [keyStatus, setKeyStatus] = useState(null)
+      const [updateInfo, setUpdateInfo] = useState(null)
+      const [upgrading, setUpgrading] = useState(false)
+      const [upgradeNote, setUpgradeNote] = useState(null)
       const [featured, setFeatured] = useState(null)
 
       const pollRef = useRef(null)
@@ -1201,6 +1235,10 @@ window.__ModuleLoader__.load({
       useEffect(() => { uiState.query = query }, [query])
       useEffect(() => { uiState.kind = kind }, [kind])
       useEffect(() => { uiState.edition = edition }, [edition])
+
+      useEffect(() => {
+        getJson('/bizyair/api/update').then(setUpdateInfo).catch(() => {})
+      }, [])
 
       useEffect(() => {
         let alive = true
@@ -1330,6 +1368,38 @@ window.__ModuleLoader__.load({
         })
       }
 
+      async function selfUpgrade() {
+        const latest = updateInfo?.latest
+        if (!latest || upgrading) return
+        const ok = typeof window.confirm === 'function'
+          ? window.confirm(t.upgradeConfirm.replace('{latest}', latest))
+          : true
+        if (!ok) return
+        setUpgrading(true); setUpgradeNote(null)
+        try {
+          const started = await postJson('/bizyair/post/upgrade', {})
+          if (!started?.started) throw new Error(started?.error ?? 'upgrade did not start')
+          const baseline = updateInfo.current
+          for (let i = 0; i < 60; i++) {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            try {
+              const health = await getJson('/bizyair/api/health')
+              if (health?.pluginVersion && health.pluginVersion !== baseline) {
+                setUpgradeNote({ tone: 'ok', text: t.upgradeDone })
+                await new Promise(resolve => setTimeout(resolve, 1200))
+                window.location.reload()
+                return
+              }
+            } catch { /* the plugin is unloaded while the swap runs */ }
+          }
+          setUpgradeNote({ tone: 'warn', text: t.upgradeTimeout })
+        } catch (error) {
+          setUpgradeNote({ tone: 'bad', text: t.upgradeFailed.replace('{error}', error.message) })
+        } finally {
+          setUpgrading(false)
+        }
+      }
+
       function markCopied(what, text) {
         if (!copyText(text)) return
         setCopied(what)
@@ -1436,6 +1506,51 @@ window.__ModuleLoader__.load({
         type: 'button', style: clusterStyle(false), title: 'language',
         onClick: () => setLang(lang === 'zh' ? 'en' : 'zh'),
       }, t.langToggle))
+
+      const dismissedUpdate = (() => {
+        try { return window.localStorage.getItem('bizyair.dismissedUpdate') } catch { return null }
+      })()
+
+      const updateBanner = updateInfo?.updateAvailable && dismissedUpdate !== updateInfo.latest
+        ? h('div', {
+          style: {
+            display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+            padding: '8px 16px', borderBottom: theme.border,
+            background: 'color-mix(in srgb, #7b4bff 10%, Canvas)',
+            color: 'inherit', fontSize: 12.5,
+          },
+        },
+        h('span', { style: { fontWeight: 600 } },
+          t.updateAvailable.replace('{latest}', updateInfo.latest).replace('{current}', updateInfo.current)),
+        h('span', { style: { color: theme.muted, fontSize: 11.5 } },
+          updateInfo.canSelfUpgrade ? t.updateHint : t.upgradeLinkInstall),
+        updateBannerNote(upgrading, upgradeNote, t),
+        updateInfo.canSelfUpgrade
+          ? h('button', {
+            type: 'button', onClick: selfUpgrade, disabled: upgrading,
+            style: { ...primaryButton(upgrading), marginLeft: 'auto', padding: '6px 14px', fontSize: 12 },
+          }, upgrading ? h(React.Fragment, null, h(Spinner, null), t.upgrading) : t.upgradeNow)
+          : null,
+        h('button', {
+          type: 'button', style: { ...smallButton, marginLeft: updateInfo.canSelfUpgrade ? 0 : 'auto' },
+          onClick: () => markCopied(
+            'upgrade',
+            t.upgradePrompt.replaceAll('{latest}', updateInfo.latest).replaceAll('{current}', updateInfo.current),
+          ),
+        }, copied === 'upgrade' ? t.copied : t.copyUpgrade),
+        h('a', {
+          href: 'https://github.com/doombeaker/dsh-bizyair/releases',
+          target: '_blank', rel: 'noreferrer',
+          style: { fontSize: 11.5, color: 'inherit', textDecoration: 'underline' },
+        }, t.releaseNotes),
+        h('button', {
+          type: 'button', title: t.close, style: iconButton,
+          onClick: () => {
+            try { window.localStorage.setItem('bizyair.dismissedUpdate', updateInfo.latest) } catch { /* ignore */ }
+            setUpdateInfo(current => (current ? { ...current, updateAvailable: false } : current))
+          },
+        }, '×'))
+        : null
 
       const header = h('div', {
         style: {
@@ -1755,6 +1870,7 @@ window.__ModuleLoader__.load({
       },
         h('style', null, SPIN_STYLE),
         header,
+        updateBanner,
         body,
         preview
           ? h(Lightbox, {
@@ -1771,7 +1887,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui10', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui12', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',
