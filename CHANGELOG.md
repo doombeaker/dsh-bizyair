@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.13 — 2026-11-07
+
+- The upgrade confirmation warns not to restart DSH while the upgrade runs.
+- Publishing guide records the mirror-lag pitfall and the recorded upgrade outcome.
+
 ## 0.10.12 — 2026-11-07
 
 - Upgrade checks retry with backoff and then fall back to the public npm registry, so a mirror that

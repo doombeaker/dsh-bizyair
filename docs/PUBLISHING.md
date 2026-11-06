@@ -170,6 +170,22 @@ const impl = await import(`./lib/impl.js?v=${Date.now()}`)
 **例外**：如果新版本改动了 `index.js` 本身、`package.json` 的 exports/依赖，或 patch 行结构，
 仍然需要重启（此时表现为 `/health` 的 `pluginVersion` 与 `/update` 的 `installedVersion` 不一致）。
 
+### 两个实测坑（已在 0.10.10 / 0.10.12 修掉）
+
+1. **镜像延迟会让新版本"看起来不存在"**：`updateBundle` 的检查先问"安装来源 registry"（本机是
+   `registry.npmmirror.com`），刚发布 1–2 分钟内镜像还没同步，于是停在 `step: "check"`。
+   现在会退避重试，并在两次失败后回退到 `https://registry.npmjs.org/`。
+2. **不要在升级过程中重启 DSH**：升级是"卸载→安装→应用"，中途重启可能让 profile 处于半应用状态
+   （表现为应用异常退出、需要再次启动）。面板的确认框已明确提示。
+
+升级的真实结果由平台返回并写入 `<workspace>/bizyair/upgrade-state.json`：
+
+```json
+{ "phase": "done", "application": "applied", "step": "install", "restartReason": null }
+```
+
+面板据此判断：`applied` 直接刷新页面；`restart-required` 才提示重启。
+
 ### 判断与操作
 
 ```bash

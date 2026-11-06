@@ -62,7 +62,7 @@ window.__ModuleLoader__.load({
         updateAvailable: '发现新版本 {latest}（当前 {current}）',
         updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
         copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本', lastUpgrade: '上次升级',
-        upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。继续？',
+        upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。\n\n升级过程中请不要重启 DSH。继续？',
         upgrading: '正在升级…', upgradeDone: '升级完成，正在刷新页面…',
         upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
         upgradeInstalledRestart: '已安装 {latest}，需要重启 DSH 后生效（当前运行的仍是旧代码）。',
@@ -119,7 +119,7 @@ window.__ModuleLoader__.load({
         updateAvailable: 'Update available: {latest} (installed {current})',
         updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
         copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version', lastUpgrade: 'Last upgrade',
-        upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically. Continue?',
+        upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically.\n\nDo not restart DSH while the upgrade is running. Continue?',
         upgrading: 'Upgrading…', upgradeDone: 'Upgrade finished, reloading…',
         upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
         upgradeInstalledRestart: 'Installed {latest}; restart DSH for it to take effect (the old code is still running).',
@@ -1934,7 +1934,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui16', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui17', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',
