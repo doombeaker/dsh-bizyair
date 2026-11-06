@@ -146,7 +146,31 @@ node scripts/build-index.mjs --name dsh-bizyair --source git \
 
 ---
 
-## 四、日常维护
+## 四、升级（实测结论，2026-11-06 / dsh 0.2.2-rc.1）
+
+`install_bundle` 对已安装的同名包直接返回 `already-installed`，所以升级必须先卸载：
+
+```bash
+plugin_manager remove_bundle  target=dsh-bizyair
+plugin_manager install_bundle target=dsh-bizyair@0.10.0
+```
+
+本次实测（0.9.x 本地 link → npm 0.10.0）：
+
+- `application: applied`，**应用无需重启**
+- `/bizyair/api/health` 的 `pluginVersion` 立刻变为新版本，证明加载了新的代码代
+- 原因：`index.js` 用带时间戳的动态 import 加载实现，插件重新 apply 时会重新导入
+
+**例外**：如果新版本改动了 `index.js` 本身、`package.json` 的 exports/依赖，或 patch 行结构，
+仍需重启应用；客户端面板另需刷新页面（HMR 通常会自动完成）。
+
+验证命令：
+
+```bash
+curl -s http://127.0.0.1:<port>/bizyair/api/health | jq '{pluginVersion, clientLoad, key}'
+```
+
+## 五、日常维护
 
 | 场景 | 操作 |
 |---|---|

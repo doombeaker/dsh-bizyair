@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1 — 2026-11-06
+
+- Featured models resolve covers in parallel with 8 s per-request timeouts:
+  cold start dropped from >20 s to ~4 s, warm reads ~1 s.
+- Documented the verified in-place upgrade procedure (uninstall → install applies without an app restart).
+
 ## 0.10.0 — 2026-11-06
 
 - Catalog now parses the model page's playground spec: per-field example defaults (including a sample prompt),
