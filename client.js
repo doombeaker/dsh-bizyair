@@ -1040,6 +1040,12 @@ window.__ModuleLoader__.load({
       },
       h('div', { style: { fontSize: 13.5, fontWeight: 700 } }, t.runsTitle),
       h('span', { style: { color: theme.muted, fontSize: 11.5 } }, `${runs.length}/${total}`),
+      (() => {
+        const estimated = runs.reduce((sum, run) => sum + (Number(run.estimate?.usd) || 0), 0)
+        return estimated > 0
+          ? h('span', { style: { color: theme.muted, fontSize: 11.5 } }, `~$${estimated.toFixed(3)}`)
+          : null
+      })(),
       active.length
         ? h('span', { style: { color: theme.accent, fontSize: 12, display: 'inline-flex', gap: 6, alignItems: 'center' } },
           h(Spinner, null), `${active.length} ${t.runsActive}`)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.7 — 2026-11-07
+
+- The runs header sums the estimated cost of the loaded runs.
+
 ## 0.10.6 — 2026-11-07
 
 - Fix cold start: the web panel routes now retry until the host web server mounts, instead of being
