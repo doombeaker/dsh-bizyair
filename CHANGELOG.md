@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.18 — 2026-11-07
+
+- Panel copy is product-facing: no test notes or platform jargon. Upgrade states read as
+  "applied / restart DSH required / in progress", and the copied request is a plain instruction.
+
 ## 0.10.17 — 2026-11-07
 
 - An upgrade request always re-checks the registry, so a cached "no newer version" from the last ten

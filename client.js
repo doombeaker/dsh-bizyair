@@ -54,8 +54,9 @@ window.__ModuleLoader__.load({
         loadMore: '加载更多', statusAll: '全部状态',
         loadingFeatured: '正在加载最新热门模型…', featuredFailed: '热门模型加载失败',
         upgradedTo: '已升级到 {v}',
+        upgradeApplied: '已生效', upgradeNeedsRestart: '需要重启 DSH',
+        upgradeRunning: '进行中', upgradeUnavailable: '未完成',
         updateAvailable: '发现新版本 {latest}（当前 {current}）',
-        updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
         copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本', lastUpgrade: '上次升级',
         upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。\n\n升级过程中请不要重启 DSH。继续？',
         upgrading: '正在升级…',
@@ -64,8 +65,8 @@ window.__ModuleLoader__.load({
         upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
         upgradeInstalledRestart: '已安装 {latest}，需要重启 DSH 后生效（当前运行的仍是旧代码）。',
         upgradeFailed: '升级失败：{error}',
-        upgradeLinkInstall: '当前是本地链接安装，无法一键升级，请使用复制指令或手动替换。',
-        upgradePrompt: '帮我升级 DSH 插件 dsh-bizyair 到 {latest}：先调用 plugin_manager remove_bundle（target=dsh-bizyair），再调用 plugin_manager install_bundle（target=dsh-bizyair@{latest}）。升级后请确认 /bizyair/api/health 的 pluginVersion 是新版本。',
+        upgradeLinkInstall: '当前安装方式不支持一键升级。',
+        upgradePrompt: '帮我升级 dsh-bizyair 插件到 {latest}：先卸载当前版本，再安装 {latest}。',
         releaseNotes: '更新日志',
         run: '生成', running: '生成中', queued: '排队中', pending: '准备中',
         success: '已完成', failed: '失败', elapsed: '用时',
@@ -115,8 +116,9 @@ window.__ModuleLoader__.load({
         loadMore: 'Load more', statusAll: 'All statuses',
         loadingFeatured: 'Loading the newest popular models…', featuredFailed: 'Failed to load featured models',
         upgradedTo: 'Upgraded to {v}',
+        upgradeApplied: 'Done', upgradeNeedsRestart: 'Restart DSH to finish',
+        upgradeRunning: 'In progress', upgradeUnavailable: 'Not completed',
         updateAvailable: 'Update available: {latest} (installed {current})',
-        updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
         copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version', lastUpgrade: 'Last upgrade',
         upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically.\n\nDo not restart DSH while the upgrade is running. Continue?',
         upgrading: 'Upgrading…',
@@ -125,8 +127,8 @@ window.__ModuleLoader__.load({
         upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
         upgradeInstalledRestart: 'Installed {latest}; restart DSH for it to take effect (the old code is still running).',
         upgradeFailed: 'Upgrade failed: {error}',
-        upgradeLinkInstall: 'This profile uses a local link install; use the copied request or replace it manually.',
-        upgradePrompt: 'Upgrade the DSH plugin dsh-bizyair to {latest}: call plugin_manager remove_bundle (target=dsh-bizyair), then plugin_manager install_bundle (target=dsh-bizyair@{latest}). Afterwards confirm /bizyair/api/health reports pluginVersion {latest}.',
+        upgradeLinkInstall: 'This installation cannot upgrade itself.',
+        upgradePrompt: 'Upgrade the dsh-bizyair plugin to {latest}: uninstall the current version, then install {latest}.',
         releaseNotes: 'Changelog',
         run: 'Generate', running: 'Generating', queued: 'Queued', pending: 'Pending',
         success: 'Completed', failed: 'Failed', elapsed: 'elapsed',
@@ -1198,7 +1200,11 @@ window.__ModuleLoader__.load({
         helpLink,
         updateInfo?.lastUpgrade
           ? h('p', { style: { color: theme.muted, fontSize: 11 } },
-            `${t.lastUpgrade} ${updateInfo.lastUpgrade.from ?? '?'} → ${updateInfo.lastUpgrade.target ?? '?'} · ${updateInfo.lastUpgrade.application ?? updateInfo.lastUpgrade.phase}`)
+            `${t.lastUpgrade} ${updateInfo.lastUpgrade.from ?? '?'} → ${updateInfo.lastUpgrade.target ?? '?'} · ${
+              updateInfo.lastUpgrade.application === 'applied' ? t.upgradeApplied
+                : updateInfo.lastUpgrade.application === 'restart-required' ? t.upgradeNeedsRestart
+                  : updateInfo.lastUpgrade.application === 'failed' || updateInfo.lastUpgrade.application === 'cancelled' ? t.upgradeUnavailable
+                    : t.upgradeRunning}`)
           : null,
         h('p', { style: { color: theme.muted, fontSize: 11.5, marginTop: 16, lineHeight: 1.6 } }, t.keyHint),
         status?.path
@@ -1438,7 +1444,7 @@ window.__ModuleLoader__.load({
               }
             }
             if (outcome?.phase === 'failed') {
-              setUpgradeNote({ tone: 'bad', text: t.upgradeFailed.replace('{error}', outcome.error ?? 'unknown') })
+              setUpgradeNote({ tone: 'bad', text: t.upgradeFailed.replace('{error}', t.upgradeUnavailable) })
               return
             }
 
@@ -1584,7 +1590,7 @@ window.__ModuleLoader__.load({
         h('span', { style: { fontWeight: 600 } },
           t.updateAvailable.replace('{latest}', updateInfo.latest).replace('{current}', updateInfo.current)),
         h('span', { style: { color: theme.muted, fontSize: 11.5 } },
-          updateInfo.canSelfUpgrade ? t.updateHint : t.upgradeLinkInstall),
+          updateInfo.canSelfUpgrade ? null : t.upgradeLinkInstall),
         updateBannerNote(upgrading, upgradeNote, t),
         upgradeReady
           ? h('button', {
@@ -1627,7 +1633,6 @@ window.__ModuleLoader__.load({
           },
         },
         h('span', { style: { fontWeight: 600, color: theme.ok } }, t.upgradedTo.replace('{v}', upgradeToast)),
-        h('span', { style: { color: theme.muted, fontSize: 11.5 } }, t.updateHint),
         h('button', {
           type: 'button', title: t.close, style: { ...iconButton, marginLeft: 'auto' },
           onClick: () => setUpgradeToast(null),
@@ -1982,7 +1987,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui19', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui20', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',
