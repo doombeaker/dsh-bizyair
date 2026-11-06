@@ -1,8 +1,4 @@
 - insert:
     - id: bizyair
       name: 'dsh-bizyair'
-      config:
-        apiKeyFile: /Users/yaochi/.dsh/bizyair.key
-        approvalThresholdUsd: 20
-        waitSeconds: 45
-        panelCwd: /Users/yaochi/Documents/deepseek-harness/default-workspace
+      config: {}

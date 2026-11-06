@@ -8,6 +8,38 @@
 
 `icon.svg` 使用 BizyAir 官方 logo（版权归 BizyAir），随插件一同分发以便在插件列表中识别。
 
+## 快速安装（任何人，一条指令）
+
+把这句话交给任意 DSH 会话里的 agent 即可：
+
+> 帮我安装 DSH 插件 `dsh-bizyair`：调用 `plugin_manager` 的 `install_bundle`，target 传 `dsh-bizyair`（npm 包名）；装好后确认插件已激活，并告诉我怎么配置 BizyAir API Key。
+
+它等价于：
+
+```
+plugin_manager install_bundle  target=dsh-bizyair
+```
+
+不需要先启用插件市场（Discover）——这条命令直接按 npm 包安装。安装后：
+
+1. 打开 设置 → **模型广场 · BizyAir** → **API Key** 页，粘贴 `sk-...` 并点「保存并校验」
+2. 或直接写文件：`printf '%s\n' 'sk-...' > ~/.dsh/bizyair.key`（600 权限）
+3. 刷新页面，会话视图里也会出现 **BizyAir** 标签
+
+> 发布的 bundle 配置里**不含任何绝对路径**：密钥默认在 `$DSH_HOME/bizyair.key`，任务与产物默认落在你第一个已注册的工作区。
+
+### 通过插件市场安装（可选）
+
+```
+plugin_manager set_bundle target=@deepseek-ai/dsh-experimental-plugin-market-bundle enabled=true
+```
+
+然后在 Plugins → Discover 添加索引：
+
+```
+https://doombeaker.github.io/dsh-bizyair/index.json
+```
+
 ## 安装与配置
 
 插件已作为本地 bundle 安装在 `desktop` profile：

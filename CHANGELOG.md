@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.2 — 2026-11-06
+
+- Shipped bundle config contains no absolute paths: the key lives at `$DSH_HOME/bizyair.key`
+  and panel data defaults to the first registered workspace.
+- `/bizyair/api/health` reports the effective config for support.
+- README documents the one-line install any DSH agent can run.
+
 ## 0.10.1 — 2026-11-06
 
 - Featured models resolve covers in parallel with 8 s per-request timeouts:
