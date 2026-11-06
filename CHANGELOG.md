@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.12 — 2026-11-07
+
+- Upgrade checks retry with backoff and then fall back to the public npm registry, so a mirror that
+  has not synced a fresh release yet no longer makes the update report a missing version.
+- The recorded upgrade outcome now carries the platform error code and diagnostic.
+
 ## 0.10.11 — 2026-11-07
 
 - The API Key page shows the last upgrade result (from → target, applied/restart-required).
