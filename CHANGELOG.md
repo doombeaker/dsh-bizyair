@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2 — 2026-11-06
+
+- CI publishes through npm trusted publishing (OIDC) with provenance; no long-lived token.
+- Repository moved to github.com/doombeaker/dsh-bizyair; market index hosted on GitHub Pages.
+
 ## 0.9.1 — 2026-11-06
 
 - Recommended models are no longer hardcoded: newest per category (text-to-image / text-to-video / text-to-speech)

@@ -27,17 +27,23 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      - name: Use an npm CLI that supports trusted publishing
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
+          node --version
+
       - name: Verify bundle syntax
         run: npm run check
 
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (OIDC trusted publishing)
         run: |
-          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
-            echo "version already published; skipping"
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "version $VERSION already published; skipping"
           else
-            npm publish --access public
+            npm publish --access public --provenance
           fi
 
       - name: Build plugin-market index
