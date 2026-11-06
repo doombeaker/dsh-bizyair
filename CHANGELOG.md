@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.6 — 2026-11-07
+
+- Fix cold start: the web panel routes now retry until the host web server mounts, instead of being
+  skipped when the plugin activates before it (symptom: tools worked, the panel returned 404).
+- The run registry resolves its directory lazily, so panel data lands in the first workspace even when
+  the workspace registry is not ready during activation.
+
 ## 0.10.5 — 2026-11-06
 
 - Upgrade polling distinguishes "new code running" from "installed, restart required", and says which.
