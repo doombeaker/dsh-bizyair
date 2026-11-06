@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.4 — 2026-11-06
+
+- Release used to verify the one-click upgrade path end to end (0.10.3 → 0.10.4).
+
 ## 0.10.3 — 2026-11-06
 
 - One-click upgrade: the panel detects a newer published version via `pluginManager.listVersions`
