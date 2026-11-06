@@ -1388,29 +1388,52 @@ window.__ModuleLoader__.load({
         if (!ok) return
         setUpgrading(true); setUpgradeNote(null)
         try {
+          setUpgradeNote({ tone: 'muted', text: t.upgrading })
           const started = await postJson('/bizyair/post/upgrade', {})
           if (!started?.started) throw new Error(started?.error ?? 'upgrade did not start')
           const baseline = updateInfo.current
-          for (let i = 0; i < 30; i++) {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            try {
-              const health = await getJson('/bizyair/api/health')
-              if (health?.pluginVersion && health.pluginVersion !== baseline) {
+          const startedAt = Date.now()
+          for (let i = 0; i < 60; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            let info = null
+            try { info = await getJson('/bizyair/api/update?refresh=1') } catch { /* swap in progress */ }
+
+            const outcome = info?.lastUpgrade && info.lastUpgrade.requestId === started.requestId
+              ? info.lastUpgrade
+              : null
+
+            if (outcome?.phase === 'done') {
+              if (outcome.application === 'applied' && info.current === latest) {
                 setUpgradeNote({ tone: 'ok', text: t.upgradeDone })
                 await new Promise(resolve => setTimeout(resolve, 1200))
                 window.location.reload()
                 return
               }
-            } catch { /* the plugin is unloaded while the swap runs */ }
-            try {
-              const info = await getJson('/bizyair/api/update')
-              // Installed but still running the previous module generation: the
-              // loader caches the module by package location, so a restart is needed.
-              if (info?.installedVersion === latest && info?.current !== latest) {
+              if (outcome.application === 'restart-required' || outcome.application === 'applied') {
                 setUpgradeNote({ tone: 'warn', text: t.upgradeInstalledRestart.replace('{latest}', latest) })
                 return
               }
-            } catch { /* swap in progress */ }
+              if (outcome.application === 'failed' || outcome.application === 'cancelled') {
+                setUpgradeNote({ tone: 'bad', text: t.upgradeFailed.replace('{error}', outcome.restartReason ?? outcome.application) })
+                return
+              }
+            }
+            if (outcome?.phase === 'failed') {
+              setUpgradeNote({ tone: 'bad', text: t.upgradeFailed.replace('{error}', outcome.error ?? 'unknown') })
+              return
+            }
+
+            if (info?.current === latest) {
+              setUpgradeNote({ tone: 'ok', text: t.upgradeDone })
+              await new Promise(resolve => setTimeout(resolve, 1200))
+              window.location.reload()
+              return
+            }
+            // Only as a last resort, and never during the swap window itself.
+            if (Date.now() - startedAt > 25000 && info?.installedVersion === latest && info?.current !== latest && !outcome) {
+              setUpgradeNote({ tone: 'warn', text: t.upgradeInstalledRestart.replace('{latest}', latest) })
+              return
+            }
           }
           setUpgradeNote({ tone: 'warn', text: t.upgradeTimeout })
         } catch (error) {
@@ -1907,7 +1930,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui14', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui15', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

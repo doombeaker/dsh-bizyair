@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.10 — 2026-11-07
+
+- The upgrade flow now reports the platform's real outcome (`applied` vs `restart-required`) from a
+  state file written across the plugin reload, instead of guessing from "installed but not running".
+  This removes the false "restart DSH" prompt during the swap window.
+
 ## 0.10.9 — 2026-11-07
 
 - The API Key page shows the installed plugin version alongside the key path.
