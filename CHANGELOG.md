@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.8 — 2026-11-07
+
+- Fix: the panel and the tools resolved the API key through different paths, so a valid key could
+  show as connected while generation reported a missing key. One shared `keyPathOf` is used everywhere.
+
 ## 0.10.7 — 2026-11-07
 
 - The runs header sums the estimated cost of the loaded runs.
