@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.15 — 2026-11-07
+
+- Release used to verify the manual-refresh upgrade flow (0.10.14 → 0.10.15).
+
 ## 0.10.14 — 2026-11-07
 
 - The upgrade no longer reloads the page by itself. Reloading while the client bundle table was still
