@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.17 — 2026-11-07
+
+- An upgrade request always re-checks the registry, so a cached "no newer version" from the last ten
+  minutes cannot block a release published in the meantime.
+
 ## 0.10.16 — 2026-11-07
 
 - The empty state no longer shows a stale three-model snapshot while the newest picks load; it shows a
