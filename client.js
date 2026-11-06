@@ -65,6 +65,7 @@ window.__ModuleLoader__.load({
         upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。继续？',
         upgrading: '正在升级…', upgradeDone: '升级完成，正在刷新页面…',
         upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
+        upgradeInstalledRestart: '已安装 {latest}，需要重启 DSH 后生效（当前运行的仍是旧代码）。',
         upgradeFailed: '升级失败：{error}',
         upgradeLinkInstall: '当前是本地链接安装，无法一键升级，请使用复制指令或手动替换。',
         upgradePrompt: '帮我升级 DSH 插件 dsh-bizyair 到 {latest}：先调用 plugin_manager remove_bundle（target=dsh-bizyair），再调用 plugin_manager install_bundle（target=dsh-bizyair@{latest}）。升级后请确认 /bizyair/api/health 的 pluginVersion 是新版本。',
@@ -121,6 +122,7 @@ window.__ModuleLoader__.load({
         upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically. Continue?',
         upgrading: 'Upgrading…', upgradeDone: 'Upgrade finished, reloading…',
         upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
+        upgradeInstalledRestart: 'Installed {latest}; restart DSH for it to take effect (the old code is still running).',
         upgradeFailed: 'Upgrade failed: {error}',
         upgradeLinkInstall: 'This profile uses a local link install; use the copied request or replace it manually.',
         upgradePrompt: 'Upgrade the DSH plugin dsh-bizyair to {latest}: call plugin_manager remove_bundle (target=dsh-bizyair), then plugin_manager install_bundle (target=dsh-bizyair@{latest}). Afterwards confirm /bizyair/api/health reports pluginVersion {latest}.',
@@ -1380,7 +1382,7 @@ window.__ModuleLoader__.load({
           const started = await postJson('/bizyair/post/upgrade', {})
           if (!started?.started) throw new Error(started?.error ?? 'upgrade did not start')
           const baseline = updateInfo.current
-          for (let i = 0; i < 60; i++) {
+          for (let i = 0; i < 30; i++) {
             await new Promise(resolve => setTimeout(resolve, 2000))
             try {
               const health = await getJson('/bizyair/api/health')
@@ -1391,6 +1393,15 @@ window.__ModuleLoader__.load({
                 return
               }
             } catch { /* the plugin is unloaded while the swap runs */ }
+            try {
+              const info = await getJson('/bizyair/api/update')
+              // Installed but still running the previous module generation: the
+              // loader caches the module by package location, so a restart is needed.
+              if (info?.installedVersion === latest && info?.current !== latest) {
+                setUpgradeNote({ tone: 'warn', text: t.upgradeInstalledRestart.replace('{latest}', latest) })
+                return
+              }
+            } catch { /* swap in progress */ }
           }
           setUpgradeNote({ tone: 'warn', text: t.upgradeTimeout })
         } catch (error) {
@@ -1887,7 +1898,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui12', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui13', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

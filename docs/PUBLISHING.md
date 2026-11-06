@@ -152,25 +152,31 @@ node scripts/build-index.mjs --name dsh-bizyair --source git \
 
 ```bash
 plugin_manager remove_bundle  target=dsh-bizyair
-plugin_manager install_bundle target=dsh-bizyair@0.10.0
+plugin_manager install_bundle target=dsh-bizyair@0.10.4
 ```
 
-本次实测（0.9.x 本地 link → npm 0.10.0）：
+**关键结论（更正了早期判断）**：安装成功不等于新代码在跑。DSH 的 Loader 按包位置缓存模块，
+把新版本装进同一个位置后，运行中的可能仍是上一代代码，直到重启应用。
 
-- `application: applied`，**应用无需重启**
-- `/bizyair/api/health` 的 `pluginVersion` 立刻变为新版本，证明加载了新的代码代
-- 原因：`index.js` 用带时间戳的动态 import 加载实现，插件重新 apply 时会重新导入
+实测证据：
 
-**例外**：如果新版本改动了 `index.js` 本身、`package.json` 的 exports/依赖，或 patch 行结构，
-仍需重启应用；客户端面板另需刷新页面（HMR 通常会自动完成）。
-
-验证命令：
-
-```bash
-curl -s http://127.0.0.1:<port>/bizyair/api/health | jq '{pluginVersion, clientLoad, key}'
+```
+安装目录 package.json         0.10.3
+profile dependency            0.10.3
+/bizyair/api/health pluginVersion   0.10.4   ← 仍在跑旧工作区代码
 ```
 
-## 五、日常维护
+判断方法：比较 `/bizyair/api/health` 的 `pluginVersion` 与 `/bizyair/api/update` 的 `installedVersion`。
+
+- 两者一致 → 新代码已生效
+- `installedVersion` 更新而 `pluginVersion` 未变 → **需要重启 DSH**
+
+面板的「立即升级」会调用 `pluginManager.updateBundle`（平台自带校验与失败回滚），并在轮询时区分这两种结果：
+生效则刷新页面，仅安装则提示"已安装 X，需要重启 DSH 后生效"。
+
+**例外**：本地 `link:` 安装无法一键升级，面板会提示改用复制指令或手动替换。
+
+## 五、日常维护## 五、日常维护
 
 | 场景 | 操作 |
 |---|---|

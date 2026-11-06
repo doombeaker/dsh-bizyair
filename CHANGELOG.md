@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.5 — 2026-11-06
+
+- Upgrade polling distinguishes "new code running" from "installed, restart required", and says which.
+- Publishing guide corrects the earlier claim: the loader caches the module by package location,
+  so installing a new version in place can require an app restart.
+
 ## 0.10.4 — 2026-11-06
 
 - Release used to verify the one-click upgrade path end to end (0.10.3 → 0.10.4).
