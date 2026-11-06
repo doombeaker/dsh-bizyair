@@ -61,7 +61,7 @@ window.__ModuleLoader__.load({
         loadMore: '加载更多', statusAll: '全部状态',
         updateAvailable: '发现新版本 {latest}（当前 {current}）',
         updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
-        copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本',
+        copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本', lastUpgrade: '上次升级',
         upgradeConfirm: '将卸载当前版本并安装 {latest}。进行中的任务会中断轮询（已提交的任务本身不受影响）。安装失败会自动回滚。继续？',
         upgrading: '正在升级…', upgradeDone: '升级完成，正在刷新页面…',
         upgradeTimeout: '升级未在预期时间内完成，请查看插件列表或应用日志。',
@@ -118,7 +118,7 @@ window.__ModuleLoader__.load({
         loadMore: 'Load more', statusAll: 'All statuses',
         updateAvailable: 'Update available: {latest} (installed {current})',
         updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
-        copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version',
+        copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version', lastUpgrade: 'Last upgrade',
         upgradeConfirm: 'This uninstalls the current version and installs {latest}. Running tasks stop polling (submitted tasks are unaffected). A failed install rolls back automatically. Continue?',
         upgrading: 'Upgrading…', upgradeDone: 'Upgrade finished, reloading…',
         upgradeTimeout: 'The upgrade did not finish in time; check the plugin list or the app log.',
@@ -1095,7 +1095,7 @@ window.__ModuleLoader__.load({
     }
 
     function SettingsPane(props) {
-      const { t } = props
+      const { t, updateInfo } = props
       const [status, setStatus] = useState(null)
       const [keyInput, setKeyInput] = useState('')
       const [busy, setBusy] = useState(false)
@@ -1195,6 +1195,10 @@ window.__ModuleLoader__.load({
         form,
         feedback,
         helpLink,
+        updateInfo?.lastUpgrade
+          ? h('p', { style: { color: theme.muted, fontSize: 11 } },
+            `${t.lastUpgrade} ${updateInfo.lastUpgrade.from ?? '?'} → ${updateInfo.lastUpgrade.target ?? '?'} · ${updateInfo.lastUpgrade.application ?? updateInfo.lastUpgrade.phase}`)
+          : null,
         h('p', { style: { color: theme.muted, fontSize: 11.5, marginTop: 16, lineHeight: 1.6 } }, t.keyHint),
         status?.path
           ? h('p', { style: { color: theme.muted, fontSize: 11 } },
@@ -1901,7 +1905,7 @@ window.__ModuleLoader__.load({
         error ? h('button', { type: 'button', onClick: () => window.location.reload(), style: smallButton }, t.retry) : null)
 
       let body
-      if (tab === 'settings') body = h(SettingsPane, { t })
+      if (tab === 'settings') body = h(SettingsPane, { t, updateInfo })
       else if (tab === 'runs') body = h(RunsPane, { t, catalog, onReuse: reuseRun, onPreview: openPreview })
       else body = catalog ? modelsBody : loading
 
@@ -1930,7 +1934,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui15', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui16', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.11 — 2026-11-07
+
+- The API Key page shows the last upgrade result (from → target, applied/restart-required).
+
 ## 0.10.10 — 2026-11-07
 
 - The upgrade flow now reports the platform's real outcome (`applied` vs `restart-required`) from a
