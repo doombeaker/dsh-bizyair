@@ -49,7 +49,10 @@ jobs:
       - name: Build plugin-market index
         run: |
           mkdir -p site
-          node scripts/build-index.mjs --source npm --out site/index.json
+          node scripts/build-index.mjs --source npm --out site/index.json \
+            --author doombeaker \
+            --repository https://github.com/doombeaker/dsh-bizyair \
+            --homepage https://github.com/doombeaker/dsh-bizyair
           cp icon.svg site/icon.svg
           cat site/index.json
 

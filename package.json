@@ -1,6 +1,6 @@
 {
   "name": "dsh-bizyair",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "BizyAir model plaza tools for DeepSeek Harness: discover, inspect, and run 235 image, video, and audio model APIs.",
   "type": "module",
   "main": "index.js",

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.3 — 2026-11-06
+
+- The published market index now carries author, repository, and homepage.
+
 ## 0.9.2 — 2026-11-06
 
 - CI publishes through npm trusted publishing (OIDC) with provenance; no long-lived token.

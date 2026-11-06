@@ -30,6 +30,11 @@
         "zh": "在对话里直接使用 BizyAir 的图像、视频、音频模型：搜索模型、查看参数、预估费用并取回生成结果。"
       },
       "icon": "icon.svg",
+      "author": "doombeaker",
+      "homepage": "https://github.com/doombeaker/dsh-bizyair",
+      "repository": {
+        "url": "https://github.com/doombeaker/dsh-bizyair"
+      },
       "metadata": {
         "category": "media",
         "keywords": [
@@ -44,8 +49,8 @@
       },
       "versions": [
         {
-          "version": "0.9.2",
-          "publishTimestamp": 1793975075,
+          "version": "0.9.3",
+          "publishTimestamp": 1793975404,
           "source": {
             "type": "npm"
           },
