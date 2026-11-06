@@ -20,13 +20,6 @@ window.__ModuleLoader__.load({
     const KEY_URL = 'https://www.bizyair.ai/user/api-key'
     const PRICE_URL = 'https://www.bizyair.ai/price'
     const PLAZA_URL = 'https://www.bizyair.ai/modelzoo?sort=recently_add'
-    const QUICK_ENDPOINTS = [
-      'bizyair/z-image-turbo/text-to-image',
-      'bizyair/moss-image-turbo-with-lora/text-to-image',
-      'bizyair/qwen3tts-custom-voice/text-to-speech',
-      'bizyair/image-tools/watermark-remover',
-      'bizyair/image-tools/background-remover',
-    ]
     let hostCtx = null
 
     /** Survives view unmount (the conversation renders one view at a time). */
@@ -59,6 +52,8 @@ window.__ModuleLoader__.load({
         exampleTag: '示例', noResultYet: '还没有结果，点上方「生成」', currentModel: '当前模型',
         submitting: '提交中…', submittingHint: '正在提交任务，等待 BizyAir 返回 request_id…',
         loadMore: '加载更多', statusAll: '全部状态',
+        loadingFeatured: '正在加载最新热门模型…', featuredFailed: '热门模型加载失败',
+        upgradedTo: '已升级到 {v}',
         updateAvailable: '发现新版本 {latest}（当前 {current}）',
         updateHint: '升级需要先卸载再安装；本插件实测无需重启应用。',
         copyUpgrade: '复制升级指令', upgradeNow: '立即升级', version: '版本', lastUpgrade: '上次升级',
@@ -118,6 +113,8 @@ window.__ModuleLoader__.load({
         exampleTag: 'example', noResultYet: 'No result yet — press Generate above', currentModel: 'Current model',
         submitting: 'Submitting…', submittingHint: 'Submitting the task and waiting for BizyAir to return a request_id…',
         loadMore: 'Load more', statusAll: 'All statuses',
+        loadingFeatured: 'Loading the newest popular models…', featuredFailed: 'Failed to load featured models',
+        upgradedTo: 'Upgraded to {v}',
         updateAvailable: 'Update available: {latest} (installed {current})',
         updateHint: 'Upgrading is uninstall + install; this plugin applies without an app restart.',
         copyUpgrade: 'Copy upgrade request', upgradeNow: 'Upgrade now', version: 'Version', lastUpgrade: 'Last upgrade',
@@ -1241,6 +1238,8 @@ window.__ModuleLoader__.load({
       const [upgradeReady, setUpgradeReady] = useState(false)
       const [upgradeNote, setUpgradeNote] = useState(null)
       const [featured, setFeatured] = useState(null)
+      const [featuredError, setFeaturedError] = useState(null)
+      const [upgradeToast, setUpgradeToast] = useState(null)
 
       const pollRef = useRef(null)
       const startedAtRef = useRef(null)
@@ -1271,8 +1270,8 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         let alive = true
         getJson('/bizyair/api/featured')
-          .then(data => { if (alive) setFeatured(data) })
-          .catch(() => {})
+          .then(data => { if (alive) { setFeatured(data); setFeaturedError(null) } })
+          .catch(error => { if (alive) setFeaturedError(error.message) })
         return () => { alive = false }
       }, [])
 
@@ -1289,6 +1288,17 @@ window.__ModuleLoader__.load({
         const timer = setInterval(() => setNow(Date.now()), 1000)
         return () => clearInterval(timer)
       }, [task])
+
+      useEffect(() => {
+        if (!updateInfo?.current) return
+        let pending = null
+        try { pending = window.localStorage.getItem('bizyair.pendingUpgrade') } catch { /* ignore */ }
+        if (!pending) return
+        if (updateInfo.current === pending) {
+          setUpgradeToast(pending)
+        }
+        try { window.localStorage.removeItem('bizyair.pendingUpgrade') } catch { /* ignore */ }
+      }, [updateInfo])
 
       useEffect(() => {
         if (!catalog || selected || !uiState.endpoint) return
@@ -1398,6 +1408,7 @@ window.__ModuleLoader__.load({
         setUpgrading(true); setUpgradeNote(null)
         try {
           setUpgradeNote({ tone: 'muted', text: t.upgrading })
+          try { window.localStorage.setItem('bizyair.pendingUpgrade', latest) } catch { /* ignore */ }
           const started = await postJson('/bizyair/post/upgrade', {})
           if (!started?.started) throw new Error(started?.error ?? 'upgrade did not start')
           const baseline = updateInfo.current
@@ -1604,6 +1615,22 @@ window.__ModuleLoader__.load({
             try { window.localStorage.setItem('bizyair.dismissedUpdate', updateInfo.latest) } catch { /* ignore */ }
             setUpdateInfo(current => (current ? { ...current, updateAvailable: false } : current))
           },
+        }, '×'))
+        : null
+
+      const upgradeToastBanner = upgradeToast
+        ? h('div', {
+          style: {
+            display: 'flex', gap: 10, alignItems: 'center', padding: '7px 16px',
+            borderBottom: theme.border, background: 'color-mix(in srgb, #1a7f37 10%, Canvas)',
+            fontSize: 12.5,
+          },
+        },
+        h('span', { style: { fontWeight: 600, color: theme.ok } }, t.upgradedTo.replace('{v}', upgradeToast)),
+        h('span', { style: { color: theme.muted, fontSize: 11.5 } }, t.updateHint),
+        h('button', {
+          type: 'button', title: t.close, style: { ...iconButton, marginLeft: 'auto' },
+          onClick: () => setUpgradeToast(null),
         }, '×'))
         : null
 
@@ -1823,8 +1850,7 @@ window.__ModuleLoader__.load({
         ]
         const rows = catalog?.models ?? []
         return planned.map(group => {
-          const endpoints = featured?.groups?.[group.key]
-            ?? QUICK_ENDPOINTS.filter(endpoint => rows.find(item => item.endpoint === endpoint)?.task === group.task)
+          const endpoints = featured?.groups?.[group.key] ?? []
           const picked = endpoints
             .map(endpoint => rows.find(item => item.endpoint === endpoint))
             .filter(Boolean)
@@ -1872,9 +1898,22 @@ window.__ModuleLoader__.load({
             h('span', null, item.task))))
       }
 
+      const featuredBlock = !featured && !featuredError
+        ? h('div', { style: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 18, color: theme.muted, fontSize: 12.5 } },
+          h(Spinner, null), t.loadingFeatured)
+        : featuredError
+          ? h('div', { style: { marginTop: 18 } },
+            h('div', { style: { color: theme.bad, fontSize: 12.5 } }, `${t.featuredFailed}: ${featuredError}`),
+            h('button', {
+              type: 'button', style: { ...smallButton, marginTop: 8 },
+              onClick: () => { setFeaturedError(null); window.location.reload() },
+            }, t.retry))
+          : null
+
       const emptyDetail = h('div', { style: { maxWidth: 660 } },
         h('div', { style: { fontSize: 15, fontWeight: 600 } }, t.empty),
         h('div', { style: { color: theme.muted, fontSize: 12.5, marginTop: 6, lineHeight: 1.7 } }, t.quickHint),
+        featuredBlock,
         featuredGroups.map(group => (group.models.length
           ? h('div', { key: group.key, style: { marginTop: 16 } },
             h('div', { style: { fontSize: 11.5, fontWeight: 600, color: theme.muted, marginBottom: 8 } }, group.label),
@@ -1926,6 +1965,7 @@ window.__ModuleLoader__.load({
         h('style', null, SPIN_STYLE),
         header,
         updateBanner,
+        upgradeToastBanner,
         body,
         preview
           ? h(Lightbox, {
@@ -1942,7 +1982,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui18', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui19', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

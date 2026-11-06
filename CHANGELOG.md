@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.16 — 2026-11-07
+
+- The empty state no longer shows a stale three-model snapshot while the newest picks load; it shows a
+  loading placeholder (or a retry on failure) instead.
+- A successful upgrade leaves a small "upgraded to X" notice that survives the client remount that HMR
+  performs, so the completion is visible even when the panel re-renders.
+
 ## 0.10.15 — 2026-11-07
 
 - Release used to verify the manual-refresh upgrade flow (0.10.14 → 0.10.15).
