@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0 — 2026-11-07
+
+- New **Gallery** tab: public BizyAir creations with thumbnails and video first frames, sort by
+  recommended/newest/hottest, keyword search, infinite "load more", and a lightbox that opens the work
+  with a prominent **Remix on BizyAir** button linking to `bizyair.ai/creation/<id>`.
+- Host-side proxy `GET /bizyair/api/gallery` caches the public community feed for five minutes and
+  normalizes media URLs (image resize / video snapshot) so the panel never downloads videos to list them.
+
 ## 0.11.1 — 2026-11-07
 
 - English-first documentation: `README.md` is the international entry point and `README.zh.md` carries

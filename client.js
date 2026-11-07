@@ -36,7 +36,13 @@ window.__ModuleLoader__.load({
     const S = {
       zh: {
         title: 'BizyAir 模型广场', subtitle: '图像 · 视频 · 音频',
-        tabModels: '模型广场', tabRuns: '任务', tabSettings: 'API Key',
+        tabModels: '模型广场', tabGallery: '作品广场', tabRuns: '任务', tabSettings: 'API Key',
+        gallerySortRecommended: '推荐', gallerySortRecent: '最新', gallerySortHot: '最热',
+        gallerySearch: '搜索作品或作者', galleryEmpty: '没有找到作品', galleryFailed: '作品加载失败',
+        galleryLoadMore: '加载更多', galleryLoading: '正在加载作品…', galleryCount: '共 {n} 件作品',
+        galleryViews: '{n} 次浏览', galleryBy: '作者：{name}',
+        gallerySource: '作品来自 BizyAir 公开广场，版权归作者所有', remix: '创作同款',
+        searchAction: '搜索', refresh: '刷新',
         runsTitle: '任务记录', runsEmpty: '还没有任务。生成一次后会出现在这里。',
         runsActive: '运行中', runsClear: '清空已完成', expand: '查看详情', collapse: '收起',
         reuse: '复用参数', delete: '删除', rerunHint: '参数已载入，确认后点生成',
@@ -102,7 +108,13 @@ window.__ModuleLoader__.load({
       },
       en: {
         title: 'BizyAir model plaza', subtitle: 'Image · Video · Audio',
-        tabModels: 'Models', tabRuns: 'Runs', tabSettings: 'API key',
+        tabModels: 'Models', tabGallery: 'Gallery', tabRuns: 'Runs', tabSettings: 'API key',
+        gallerySortRecommended: 'Recommended', gallerySortRecent: 'Newest', gallerySortHot: 'Hottest',
+        gallerySearch: 'Search works or creators', galleryEmpty: 'No works found', galleryFailed: 'Failed to load works',
+        galleryLoadMore: 'Load more', galleryLoading: 'Loading works…', galleryCount: '{n} works',
+        galleryViews: '{n} views', galleryBy: 'by {name}',
+        gallerySource: 'Public works from BizyAir; copyright belongs to their creators', remix: 'Remix on BizyAir',
+        searchAction: 'Search', refresh: 'Refresh',
         runsTitle: 'Runs', runsEmpty: 'No runs yet. Generate once and it shows up here.',
         runsActive: 'running', runsClear: 'Clear finished', expand: 'Details', collapse: 'Hide',
         reuse: 'Reuse parameters', delete: 'Delete', rerunHint: 'Parameters loaded — press Generate',
@@ -533,9 +545,10 @@ window.__ModuleLoader__.load({
     }
 
     function Lightbox(props) {
-      const { urls, index, setIndex, onClose, t } = props
-      const url = urls[index]
-      const name = fileNameOf(url, index)
+      const { urls, metas, index, setIndex, onClose, t } = props
+      const meta = metas?.[index] ?? null
+      const url = meta?.url ?? urls[index]
+      const name = meta?.title || fileNameOf(url, index)
       const isImage = IMAGE_EXT.test(url)
       const [copied, setCopied] = useState(false)
       const [zoom, setZoom] = useState(1)
@@ -672,6 +685,18 @@ window.__ModuleLoader__.load({
       h('div', { style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' } },
         h('span', { style: { color: 'rgba(255,255,255,0.72)', fontSize: 11.5 } },
           `${name}${urls.length > 1 ? ` · ${index + 1}/${urls.length}` : ''}`),
+        meta?.author
+          ? h('span', { style: { color: 'rgba(255,255,255,0.55)', fontSize: 11.5 } }, t.galleryBy.replace('{name}', meta.author))
+          : null,
+        meta?.href
+          ? h('a', {
+            href: meta.href, target: '_blank', rel: 'noreferrer',
+            style: {
+              padding: '8px 16px', borderRadius: 8, background: '#22c55e', color: '#fff',
+              textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6,
+            },
+          }, `${t.remix} ↗`)
+          : null,
         zoom > 1
           ? h('button', {
             type: 'button', onClick: () => applyZoom(1),
@@ -698,6 +723,148 @@ window.__ModuleLoader__.load({
           },
         }, copied ? t.copied : t.copyUrl)),
       isImage ? h('div', { style: { color: 'rgba(255,255,255,0.4)', fontSize: 10.5 } }, t.zoomHint) : null))
+    }
+
+    function GalleryPane(props) {
+      const { t } = props
+      const [items, setItems] = useState([])
+      const [total, setTotal] = useState(0)
+      const [sort, setSort] = useState('recommended')
+      const [query, setQuery] = useState('')
+      const [applied, setApplied] = useState('')
+      const [loading, setLoading] = useState(false)
+      const [error, setError] = useState(null)
+      const [preview, setPreview] = useState(null)
+      const requestRef = useRef(0)
+
+      async function load(nextPage, options = {}) {
+        const token = ++requestRef.current
+        setLoading(true)
+        setError(null)
+        try {
+          const qs = new URLSearchParams({ current: String(nextPage), size: '24', sort })
+          if (applied) qs.set('keyword', applied)
+          const data = await getJson(`/bizyair/api/gallery?${qs}`)
+          if (token !== requestRef.current) return
+          const list = Array.isArray(data?.items) ? data.items : []
+          setItems(current => (options.append ? [...current, ...list] : list))
+          setTotal(Number(data?.total) || 0)
+        } catch (failure) {
+          if (token === requestRef.current) {
+            setError(failure.message)
+            if (!options.append) setItems([])
+          }
+        } finally {
+          if (token === requestRef.current) setLoading(false)
+        }
+      }
+
+      useEffect(() => { load(1) }, [sort, applied])
+
+      const sorts = [
+        ['recommended', t.gallerySortRecommended],
+        ['recent', t.gallerySortRecent],
+        ['hot', t.gallerySortHot],
+      ]
+
+      const toolbar = h('div', {
+        style: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '10px 16px', borderBottom: theme.border },
+      },
+      h('div', { style: { display: 'flex', gap: 2, borderRadius: 8, padding: 3, background: theme.soft } },
+        sorts.map(([key, label]) => h('button', {
+          key, type: 'button', style: segmentStyle(sort === key), onClick: () => setSort(key),
+        }, label))),
+      h('input', {
+        value: query, placeholder: t.gallerySearch,
+        onChange: event => setQuery(event.target.value),
+        onKeyDown: event => { if (event.key === 'Enter') setApplied(query.trim()) },
+        style: { ...inputStyle, width: 220 },
+      }),
+      h('button', { type: 'button', style: smallButton, onClick: () => setApplied(query.trim()) }, t.searchAction),
+      h('span', { style: { marginLeft: 'auto', color: theme.muted, fontSize: 11.5 } },
+        total ? t.galleryCount.replace('{n}', total) : ''),
+      h('button', { type: 'button', style: smallButton, onClick: () => load(1) }, t.refresh))
+
+      const cardOf = (item, index) => h('div', {
+        key: item.id, role: 'button', tabIndex: 0,
+        onClick: () => setPreview({ index }),
+        onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') setPreview({ index }) },
+        style: {
+          cursor: 'zoom-in', borderRadius: 10, overflow: 'hidden', border: theme.border,
+          background: theme.surface, display: 'flex', flexDirection: 'column',
+        },
+      },
+      h('div', { style: { position: 'relative', aspectRatio: '4 / 3', background: theme.soft } },
+        item.thumbUrl
+          ? h('img', {
+            src: item.thumbUrl, loading: 'lazy', alt: '',
+            style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+          })
+          : null,
+        item.kind === 'video'
+          ? h('span', {
+            style: {
+              position: 'absolute', left: 8, top: 8, padding: '2px 7px', borderRadius: 6,
+              background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10.5,
+            },
+          }, '▶')
+          : null,
+        item.views
+          ? h('span', {
+            style: {
+              position: 'absolute', right: 8, bottom: 8, padding: '2px 7px', borderRadius: 6,
+              background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 10,
+            },
+          }, t.galleryViews.replace('{n}', item.views))
+          : null),
+      h('div', { style: { padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 2 } },
+        h('div', {
+          style: { fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+        }, item.title),
+        h('div', {
+          style: { fontSize: 10.5, color: theme.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+        }, item.author ?? '')))
+
+      const metas = items.map(item => ({
+        url: item.fullUrl, title: item.title, author: item.author, href: item.detailUrl,
+      }))
+
+      const grid = h('div', {
+        style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12, padding: '14px 16px' },
+      }, items.map(cardOf))
+
+      const footer = h('div', {
+        style: { display: 'flex', alignItems: 'center', gap: 12, padding: '4px 16px 20px', flexWrap: 'wrap' },
+      },
+      items.length < total
+        ? h('button', {
+          type: 'button', style: smallButton, disabled: loading,
+          onClick: () => load(Math.floor(items.length / 24) + 1, { append: true }),
+        }, loading ? h(React.Fragment, null, h(Spinner, null), t.galleryLoading) : t.galleryLoadMore)
+        : null,
+      h('span', { style: { color: theme.muted, fontSize: 10.5 } }, t.gallerySource))
+
+      const content = error && !items.length
+        ? h('div', { style: { padding: 24, color: theme.bad, fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center' } },
+          `${t.galleryFailed}: ${error}`,
+          h('button', { type: 'button', style: smallButton, onClick: () => load(1) }, t.retry))
+        : !items.length
+          ? h('div', { style: { padding: 24, color: theme.muted, display: 'flex', gap: 10, alignItems: 'center' } },
+            loading ? h(React.Fragment, null, h(Spinner, null), t.galleryLoading) : t.galleryEmpty)
+          : h(React.Fragment, null, grid, footer)
+
+      return h('div', { className: 'bizyair-scroll', style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+        toolbar, content,
+        preview
+          ? h(Lightbox, {
+            urls: metas.map(meta => meta.url),
+            metas,
+            index: preview.index,
+            setIndex: index => setPreview({ index }),
+            onClose: () => setPreview(null),
+            t,
+          })
+          : null)
     }
 
     function Outputs(props) {
@@ -1569,6 +1736,7 @@ window.__ModuleLoader__.load({
         },
       },
       h('button', { type: 'button', style: segmentStyle(tab === 'models'), onClick: () => setTab('models') }, t.tabModels),
+      h('button', { type: 'button', style: segmentStyle(tab === 'gallery'), onClick: () => setTab('gallery') }, t.tabGallery),
       h('button', { type: 'button', style: segmentStyle(tab === 'runs'), onClick: () => setTab('runs') }, t.tabRuns))
 
       const keyColor = !keyStatus
@@ -1977,6 +2145,7 @@ window.__ModuleLoader__.load({
 
       let body
       if (tab === 'settings') body = h(SettingsPane, { t, updateInfo })
+      else if (tab === 'gallery') body = h(GalleryPane, { t })
       else if (tab === 'runs') body = h(RunsPane, { t, catalog, onReuse: reuseRun, onPreview: openPreview })
       else body = catalog ? modelsBody : loading
 

@@ -71,6 +71,7 @@ After a reload, the conversation view switcher gains a **BizyAir** view (`conver
 - Positioning: a funnel into BizyAir, a subset of the website; prices, more models and account actions link back to bizyair.ai
 - English and Chinese, default English, switchable and remembered
 - Empty-state shortcuts for affordable models (self-hosted / economy first), with unit prices
+- **Gallery**: public BizyAir creations (531 and growing) with thumbnails, video first frames, sort by recommended/newest/hottest, keyword search, and an in-panel lightbox whose **Remix on BizyAir** button opens the work's page for a one-click remix
 - **Runs**: every generation (panel or chat) is recorded; running and finished runs survive model switches, reloads and restarts, grouped by today/yesterday/earlier, searchable, with reuse, save, delete and raw JSON
 - **Result preview**: images/videos/audio open in a lightbox; images zoom with the wheel, pan by dragging, double-click to reset, swipe to switch; videos use the CDN first frame as a poster
 - Left: model list with search, kind and edition filters, starting price and edition color
