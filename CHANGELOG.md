@@ -5,6 +5,8 @@
 - New **Gallery** tab: public BizyAir creations with thumbnails and video first frames, sort by
   recommended/newest/hottest, keyword search, infinite "load more", and a lightbox that opens the work
   with a prominent **Remix on BizyAir** button linking to `bizyair.ai/creation/<id>`.
+- A BizyAir entry sits in the left rail beside Plugins / Automation and opens the plaza as a full page
+  (`main` slot), with the settings entry removed; the rail mark renders above its native size.
 - Host-side proxy `GET /bizyair/api/gallery` caches the public community feed for five minutes and
   normalizes media URLs (image resize / video snapshot) so the panel never downloads videos to list them.
 

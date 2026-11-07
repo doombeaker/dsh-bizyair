@@ -1281,7 +1281,7 @@ window.__ModuleLoader__.load({
 
     /** BizyAir mark for the global panel rail (official logo paths from icon.svg). */
     function BizyAirMark(props) {
-      const size = props?.size ?? 18
+      const size = Math.round((props?.size ?? 16) * 1.55)
       const active = props?.active
       return h('svg', {
         width: size, height: size, viewBox: '0 0 518 518', fill: 'none',
@@ -2202,12 +2202,6 @@ window.__ModuleLoader__.load({
         hostCtx = ctx
         try { fetch('/bizyair/post/client-loaded?v=0.11.0+promo2', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
-        ctx.slots.inject('settings.section', () => ctx.slots.register({
-          name: 'settings.section',
-          id: 'bizyair',
-          order: 25,
-          label: 'BizyAir',
-        }, View))
 
         ctx.slots.inject('conversation.view', () => ctx.slots.register({
           name: 'conversation.view', id: 'bizyair', order: 20, label: 'BizyAir',
