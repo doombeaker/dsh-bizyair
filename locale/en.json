@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BizyAir model plaza",
-    "description": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models with parameter schemas, cost estimates, approval gates and a task panel."
+    "description": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models (213 enabled by default) with parameter schemas, cost estimates, approval gates and a task panel."
   },
   "tools": {
     "models": "Search models",

@@ -1,7 +1,7 @@
 {
   "name": "dsh-bizyair",
   "version": "0.11.0",
-  "description": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models with parameter schemas, cost estimates, approval gates and a task panel.",
+  "description": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models (213 enabled by default) with parameter schemas, cost estimates, approval gates and a task panel.",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -19,7 +19,7 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
-    "assets/*.png",
+    "assets/",
     "screenshots.json"
   ],
   "dsh": {

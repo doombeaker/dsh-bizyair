@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "title": {
+    "en": "BizyAir model plaza",
+    "zh": "BizyAir 模型广场"
+  },
+  "description": {
+    "en": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models (213 enabled by default) with parameter schemas, cost estimates, approval gates and a task panel.",
+    "zh": "在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型（默认启用 213 个），含参数 schema、费用预估、审批与任务面板。"
+  },
+  "metadata": {
+    "categories": {
+      "media": {
+        "title": {
+          "en": "Media generation",
+          "zh": "媒体生成"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-bizyair",
+      "title": {
+        "en": "BizyAir model plaza",
+        "zh": "BizyAir 模型广场"
+      },
+      "description": {
+        "en": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models (213 enabled by default) with parameter schemas, cost estimates, approval gates and a task panel.",
+        "zh": "在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型（默认启用 213 个），含参数 schema、费用预估、审批与任务面板。"
+      },
+      "icon": "icon.svg",
+      "author": "doombeaker",
+      "homepage": "https://github.com/doombeaker/dsh-bizyair",
+      "repository": {
+        "url": "https://github.com/doombeaker/dsh-bizyair"
+      },
+      "metadata": {
+        "category": "media",
+        "keywords": [
+          "bizyair",
+          "image-generation",
+          "video-generation",
+          "text-to-speech",
+          "media"
+        ],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "0.11.0",
+          "publishTimestamp": 1794022405,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    }
+  ]
+}

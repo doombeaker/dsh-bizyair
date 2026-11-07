@@ -55,6 +55,7 @@ window.__ModuleLoader__.load({
         loadMore: '加载更多', statusAll: '全部状态',
         loadingFeatured: '正在加载最新热门模型…', featuredFailed: '热门模型加载失败',
         featuredPriceNote: '按价格从低到高推荐；单价为单次/每秒价格，以 BizyAir 账单为准。',
+        modelsEnabled: '默认启用 {n}',
         upgradedTo: '已升级到 {v}',
         upgradeApplied: '已生效', upgradeNeedsRestart: '需要重启 DSH',
         upgradeRunning: '进行中', upgradeUnavailable: '未完成',
@@ -120,6 +121,7 @@ window.__ModuleLoader__.load({
         loadMore: 'Load more', statusAll: 'All statuses',
         loadingFeatured: 'Loading the newest popular models…', featuredFailed: 'Failed to load featured models',
         featuredPriceNote: 'Recommended cheapest first; unit prices are per call or per second and follow your BizyAir billing.',
+        modelsEnabled: '{n} enabled by default',
         upgradedTo: 'Upgraded to {v}',
         upgradeApplied: 'Done', upgradeNeedsRestart: 'Restart DSH to finish',
         upgradeRunning: 'In progress', upgradeUnavailable: 'Not completed',
@@ -1665,7 +1667,7 @@ window.__ModuleLoader__.load({
       h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
         h('div', { style: { fontSize: 15, fontWeight: 700 } }, t.title),
         catalog ? h('span', { style: { color: theme.muted, fontSize: 11.5 } },
-          `${catalog.models.length} ${t.models} · ${catalog.generatedAt?.slice(0, 10) ?? ''}`) : null),
+          `${catalog.stats?.models ?? catalog.models.length} ${t.models} · ${t.modelsEnabled.replace('{n}', catalog.models.length)} · ${catalog.generatedAt?.slice(0, 10) ?? ''}`) : null),
       h('div', { style: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
         segmented,
         h('span', { style: { color: theme.muted, fontSize: 11 } }, '|'),
@@ -2009,7 +2011,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+promo1', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.11.0+promo2', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',
