@@ -340,7 +340,12 @@ async function main() {
 
   const models = await mapLimit(urls, CONCURRENCY, async (url) => {
     const endpoint = url.replace(`${ORIGIN}/modelzoo/`, '')
-    const [model, ...rest] = endpoint.split('/')
+    const segments = endpoint.split('/')
+    const model = segments[0]
+    // `task` is the leaf action; `taskPath` keeps the category prefix
+    // (image-tools/watermark-remover) for filtering and display.
+    const task = segments[segments.length - 1]
+    const taskPath = segments.slice(1).join('/')
     const doc = await fetchText(`${url}/llms.txt`, { cacheKey: `doc/${endpoint}.md` })
     const html = await fetchText(url, { cacheKey: `page/${endpoint}.html` })
     const detail = parseDetail(html)
@@ -348,7 +353,8 @@ async function main() {
     const assembled = {
       endpoint,
       model,
-      task: rest.join('/'),
+      task,
+      taskPath,
       title: detail.title ?? endpoint,
       description: detail.description,
       edition: detail.edition,
