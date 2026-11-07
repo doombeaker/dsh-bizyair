@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.1 — 2026-11-07
+
+- English-first documentation: `README.md` is the international entry point and `README.zh.md` carries
+  the Chinese version, cross-linked at the top.
+- A user-facing introduction replaces the implementation-heavy one: every frontier image, video and
+  audio model in one AIGC platform, with the new-account credit (≈200 images, 3 short videos, 100 minutes
+  of speech) stated in package.json, locale files, README and the API-key empty state.
+- The panel defaults to English and still remembers an explicit Chinese choice.
+- `assets/` now ships whole, so the npm tarball carries all three screenshots; the panel header reads
+  "235 models · 213 enabled by default".
+- Catalog `task`/`taskPath` are derived from the endpoint leaf instead of the vendor remainder.
+
 ## 0.11.0 — 2026-11-07
 
 - Promotion P0: the API key page explains what a $1 balance buys (≈200 images or 8 five-second 720P
