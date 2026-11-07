@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BizyAir 模型广场",
-    "description": "在对话里直接使用 BizyAir 的图像、视频、音频模型：搜索模型、查看参数、预估费用并取回生成结果。"
+    "description": "在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型，含参数 schema、费用预估、审批与任务面板。"
   },
   "tools": {
     "models": "搜索模型",

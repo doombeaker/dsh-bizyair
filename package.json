@@ -1,7 +1,7 @@
 {
   "name": "dsh-bizyair",
-  "version": "0.10.20",
-  "description": "BizyAir model plaza tools for DeepSeek Harness: discover, inspect, and run 235 image, video, and audio model APIs.",
+  "version": "0.11.0",
+  "description": "Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models with parameter schemas, cost estimates, approval gates and a task panel.",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -18,7 +18,9 @@
     "scripts/build-catalog.mjs",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "assets/*.png",
+    "screenshots.json"
   ],
   "dsh": {
     "bundle": {

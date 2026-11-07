@@ -19,6 +19,7 @@ window.__ModuleLoader__.load({
     const LANG_KEY = 'bizyair.lang'
     const KEY_URL = 'https://www.bizyair.ai/user/api-key'
     const PRICE_URL = 'https://www.bizyair.ai/price'
+    const SIGNUP_URL = 'https://www.bizyair.ai/login'
     const PLAZA_URL = 'https://www.bizyair.ai/modelzoo?sort=recently_add'
     let hostCtx = null
 
@@ -53,6 +54,7 @@ window.__ModuleLoader__.load({
         submitting: '提交中…', submittingHint: '正在提交任务，等待 BizyAir 返回 request_id…',
         loadMore: '加载更多', statusAll: '全部状态',
         loadingFeatured: '正在加载最新热门模型…', featuredFailed: '热门模型加载失败',
+        featuredPriceNote: '按价格从低到高推荐；单价为单次/每秒价格，以 BizyAir 账单为准。',
         upgradedTo: '已升级到 {v}',
         upgradeApplied: '已生效', upgradeNeedsRestart: '需要重启 DSH',
         upgradeRunning: '进行中', upgradeUnavailable: '未完成',
@@ -85,6 +87,8 @@ window.__ModuleLoader__.load({
         costNote: '费用以 BizyAir 调用记录为准。',
         keyTitle: 'API Key',
         keyIntro: '在 BizyAir 账号菜单（右上角头像 → API Key）获取密钥。密钥保存在本机 $DSH_HOME/bizyair.key（仅本人可读），不会写入配置文件或对话。',
+        keyValueIntro: '注册 BizyAir 送 $1 ≈ 200 张图（$0.005/张）或 8 条 5 秒 720P 视频（$0.025/秒）。价格以 BizyAir 账单为准。',
+        keySignup: '去注册并获取 API Key',
         keyPlaceholder: 'sk-…', keySave: '保存并校验', keyCheck: '测试连接',
         keySaved: '已保存', keyValid: '连接正常', keyInvalid: '密钥无效或已过期',
         keyNotSaved: '未保存：密钥无效，已保留原有密钥',
@@ -115,6 +119,7 @@ window.__ModuleLoader__.load({
         submitting: 'Submitting…', submittingHint: 'Submitting the task and waiting for BizyAir to return a request_id…',
         loadMore: 'Load more', statusAll: 'All statuses',
         loadingFeatured: 'Loading the newest popular models…', featuredFailed: 'Failed to load featured models',
+        featuredPriceNote: 'Recommended cheapest first; unit prices are per call or per second and follow your BizyAir billing.',
         upgradedTo: 'Upgraded to {v}',
         upgradeApplied: 'Done', upgradeNeedsRestart: 'Restart DSH to finish',
         upgradeRunning: 'In progress', upgradeUnavailable: 'Not completed',
@@ -147,6 +152,8 @@ window.__ModuleLoader__.load({
         costNote: 'BizyAir call history is authoritative for billing.',
         keyTitle: 'API key',
         keyIntro: 'Get a key from the BizyAir avatar menu → API Key. It is stored locally in $DSH_HOME/bizyair.key (owner-only) and never written to config files or the chat.',
+        keyValueIntro: 'A new BizyAir account includes $1 ≈ 200 images ($0.005 each) or 8 five-second 720P videos ($0.025/second). Prices follow your BizyAir billing.',
+        keySignup: 'Sign up and get an API key',
         keyPlaceholder: 'sk-…', keySave: 'Save and verify', keyCheck: 'Test connection',
         keySaved: 'Saved', keyValid: 'Connected', keyInvalid: 'Key is invalid or expired',
         keyNotSaved: 'Not saved: the key is invalid, the stored key is unchanged',
@@ -1186,15 +1193,19 @@ window.__ModuleLoader__.load({
         : null
 
       const helpLink = (!configured || valid === false)
-        ? h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' } },
-          h('span', { style: { color: theme.muted, fontSize: 11.5 } }, t.keyHelp),
-          h('a', {
-            href: KEY_URL, target: '_blank', rel: 'noreferrer',
-            style: {
-              padding: '6px 12px', borderRadius: 8, border: `1px solid ${theme.accent}`,
-              color: 'inherit', fontSize: 12, textDecoration: 'none', fontWeight: 600,
-            },
-          }, `${t.getKey} ↗`))
+        ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 } },
+          !configured
+            ? h('p', { style: { margin: 0, color: 'inherit', fontSize: 12.5, lineHeight: 1.7 } }, t.keyValueIntro)
+            : null,
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
+            h('span', { style: { color: theme.muted, fontSize: 11.5 } }, !configured ? null : t.keyHelp),
+            h('a', {
+              href: !configured ? SIGNUP_URL : KEY_URL, target: '_blank', rel: 'noreferrer',
+              style: {
+                padding: '6px 12px', borderRadius: 8, border: `1px solid ${theme.accent}`,
+                color: 'inherit', fontSize: 12, textDecoration: 'none', fontWeight: 600,
+              },
+            }, `${!configured ? t.keySignup : t.getKey} ↗`)))
         : null
 
       return h('div', { className: 'bizyair-scroll', style: { padding: 20, maxWidth: 660, overflowY: 'auto' } },
@@ -1865,7 +1876,11 @@ window.__ModuleLoader__.load({
           const picked = endpoints
             .map(endpoint => rows.find(item => item.endpoint === endpoint))
             .filter(Boolean)
-          return { ...group, models: picked }
+          const editionRank = { 'Self-hosted': 0, Economy: 1, Official: 2 }
+          const ordered = [...picked].sort((left, right) =>
+            (editionRank[left.edition] ?? 3) - (editionRank[right.edition] ?? 3)
+            || (left.priceFrom?.usd ?? 99) - (right.priceFrom?.usd ?? 99))
+          return { ...group, models: ordered }
         })
       }, [featured, catalog, lang])
 
@@ -1930,9 +1945,10 @@ window.__ModuleLoader__.load({
             h('div', { style: { fontSize: 11.5, fontWeight: 600, color: theme.muted, marginBottom: 8 } }, group.label),
             h('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap' } }, group.models.map(quickCard)))
           : null)),
+        h('div', { style: { color: theme.muted, fontSize: 11, marginTop: 12 } }, t.featuredPriceNote),
         h('a', {
           href: PLAZA_URL, target: '_blank', rel: 'noreferrer',
-          style: { display: 'inline-block', marginTop: 18, fontSize: 12, color: 'inherit', textDecoration: 'underline' },
+          style: { display: 'inline-block', marginTop: 10, fontSize: 12, color: 'inherit', textDecoration: 'underline' },
         }, `${t.browseAll} ↗`))
 
       const detail = selected
@@ -1993,7 +2009,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui21', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+promo1', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

@@ -1,8 +1,17 @@
 # BizyAir model plaza for DeepSeek Harness
 
-> 维护与发布：[docs/PUBLISHING.md](docs/PUBLISHING.md)（仓库结构、npm 发布、插件市场索引格式与步骤）
+**一块钱，200 张图，快速出片。** · **$1 ≈ 200 images, fast results.**
 
-把 BizyAir 模型广场（235 个图像 / 视频 / 音频模型 API）接进 DSH：对话内 6 个工具 + Web 页面板（模型浏览、参数组件、成本预估、异步任务、结果预览）。
+在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型，含参数 schema、费用预估、审批与任务面板。
+
+Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models with parameter schemas, cost estimates, approval gates and a task panel.
+
+![dsh-bizyair panel](https://raw.githubusercontent.com/doombeaker/dsh-bizyair/main/assets/screenshots/01-models.png)
+
+**装一条命令**：`plugin_manager install_bundle  target=dsh-bizyair`
+**费用**：注册 BizyAir 送 $1，≈ 200 张图（$0.005/张）或 8 条 5 秒 720P 视频（$0.025/秒）；估算 ≥ 20 USD 时二次确认，可先用 `bizyair_price` 估价。以 BizyAir 账单为准。
+
+> 维护与发布：[docs/PUBLISHING.md](docs/PUBLISHING.md)（仓库结构、npm 发布、插件市场索引格式与步骤）
 
 ## 图标
 

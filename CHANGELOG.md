@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0 — 2026-11-07
+
+- Promotion P0: the API key page explains what a $1 balance buys (≈200 images or 8 five-second 720P
+  videos) and links the registration entry; prices always note that BizyAir billing is authoritative.
+- The empty state recommends affordable editions first (self-hosted / economy before official) and shows
+  each card's unit price, so a new account is not steered into a flagship call.
+- Catalog-facing metadata: 235-model bilingual description synced across package.json, locale files and
+  the README; 180×180 PNG icon; two panel screenshots plus screenshots.json for storefronts; README
+  first screen rewritten around the value proposition.
+
 ## 0.10.20 — 2026-11-07
 
 - Price tables are parsed table by table: the price column is chosen by its header, notes are ignored,
