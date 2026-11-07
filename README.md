@@ -2,7 +2,7 @@
 
 **$1 ≈ 200 images, fast results.**
 
-Every frontier image, video and audio model — open and closed source — in one AIGC creation platform inside DeepSeek Harness. A new account's credit is worth about 200 images, 3 short videos or 100 minutes of speech.
+235 image, video, audio and vision models from one AIGC platform, inside DeepSeek Harness. A new account's credit is worth about 200 images, 3 short videos or 100 minutes of speech.
 
 [中文说明 →](README.zh.md)
 
