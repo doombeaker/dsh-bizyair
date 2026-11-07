@@ -781,8 +781,7 @@ window.__ModuleLoader__.load({
         style: { ...inputStyle, width: 220 },
       }),
       h('button', { type: 'button', style: smallButton, onClick: () => setApplied(query.trim()) }, t.searchAction),
-      h('span', { style: { marginLeft: 'auto', color: theme.muted, fontSize: 11.5 } },
-        total ? t.galleryCount.replace('{n}', total) : ''),
+      h('span', { style: { marginLeft: 'auto' } }),
       h('button', { type: 'button', style: smallButton, onClick: () => load(1) }, t.refresh))
 
       const ratioOf = item => (item.width && item.height ? `${item.width} / ${item.height}` : '4 / 3')
@@ -840,7 +839,6 @@ window.__ModuleLoader__.load({
       },
       items.length < total
         ? h('div', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-          h('span', { style: { color: theme.muted, fontSize: 11 } }, `${items.length} / ${total}`),
           h('button', {
             type: 'button', disabled: loading,
             style: { ...primaryButton(loading), padding: '10px 26px', borderRadius: 10, fontSize: 13.5 },
