@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "BizyAir 模型广场",
-    "description": "在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型（默认启用 213 个），含参数 schema、费用预估、审批与任务面板。"
+    "description": "集结前沿的开源与闭源生图、生视频、音频模型，在 DeepSeek Harness 里完成 AIGC 创作。注册赠额约等于 200 张图、3 条短视频或 100 分钟语音。"
   },
   "tools": {
     "models": "搜索模型",

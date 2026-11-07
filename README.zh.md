@@ -2,14 +2,14 @@
 
 **一块钱，200 张图，快速出片。**
 
-在对话里浏览并运行 BizyAir 模型广场：235 个图像、视频、音频与视觉模型（默认启用 213 个），含参数 schema、费用预估、审批与任务面板。
+集结前沿的开源与闭源生图、生视频、音频模型，在 DeepSeek Harness 里完成 AIGC 创作。注册赠额约等于 200 张图、3 条短视频或 100 分钟语音。
 
 [English →](README.md)
 
 ![dsh-bizyair 面板](https://cdn.jsdelivr.net/gh/doombeaker/dsh-bizyair@main/assets/screenshots/01-models.png)
 
 **装一条命令**：`plugin_manager install_bundle  target=dsh-bizyair`
-**费用**：注册 BizyAir 送 $1，≈ 200 张图（$0.005/张）或 8 条 5 秒 720P 视频（$0.025/秒）；估算 ≥ 20 USD 会二次确认，可先用 `bizyair_price` 估价。以 BizyAir 账单为准。
+**费用**：注册 BizyAir 送 $1，≈ 200 张图（$0.005/张）、3 条 5 秒 720P 视频或 100 分钟语音；估算 ≥ 20 USD 会二次确认，可先用 `bizyair_price` 估价。以 BizyAir 账单为准。
 
 > 维护与发布说明：[docs/PUBLISHING.md](docs/PUBLISHING.md)
 

@@ -2,14 +2,14 @@
 
 **$1 ≈ 200 images, fast results.**
 
-Browse and run the BizyAir model plaza from chat: 235 image, video, audio and vision models (213 enabled by default) with parameter schemas, cost estimates, approval gates and a task panel.
+Every frontier image, video and audio model — open and closed source — in one AIGC creation platform inside DeepSeek Harness. A new account's credit is worth about 200 images, 3 short videos or 100 minutes of speech.
 
 [中文说明 →](README.zh.md)
 
 ![dsh-bizyair panel](https://cdn.jsdelivr.net/gh/doombeaker/dsh-bizyair@main/assets/screenshots/01-models.png)
 
 **Install in one command**: `plugin_manager install_bundle  target=dsh-bizyair`
-**Cost**: a new BizyAir account includes $1, ≈ 200 images ($0.005 each) or 8 five-second 720P videos ($0.025/second). Calls estimated at ≥ 20 USD ask for confirmation; use `bizyair_price` to check first. BizyAir billing is authoritative.
+**Cost**: a new BizyAir account includes $1, ≈ 200 images ($0.005 each), 3 five-second 720P videos, or 100 minutes of speech. Calls estimated at ≥ 20 USD ask for confirmation; use `bizyair_price` to check first. BizyAir billing is authoritative.
 
 > Maintenance and release notes: [docs/PUBLISHING.md](docs/PUBLISHING.md)
 
