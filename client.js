@@ -173,13 +173,8 @@ window.__ModuleLoader__.load({
         const stored = window.localStorage.getItem(LANG_KEY)
         if (stored === 'zh' || stored === 'en') return stored
       } catch { /* ignore */ }
-      try {
-        const snapshot = hostCtx?.locale?.getLocale?.()
-        const id = snapshot?.id ?? snapshot?.locale ?? snapshot?.current ?? ''
-        if (/^zh/i.test(String(id))) return 'zh'
-        if (/^en/i.test(String(id))) return 'en'
-      } catch { /* ignore */ }
-      return typeof navigator !== 'undefined' && /^zh/i.test(navigator.language || '') ? 'zh' : 'en'
+      // BizyAir is an international-first product: English unless the user picks Chinese.
+      return 'en'
     }
 
     async function getJson(url, init) {
