@@ -785,16 +785,18 @@ window.__ModuleLoader__.load({
         total ? t.galleryCount.replace('{n}', total) : ''),
       h('button', { type: 'button', style: smallButton, onClick: () => load(1) }, t.refresh))
 
+      const ratioOf = item => (item.width && item.height ? `${item.width} / ${item.height}` : '4 / 3')
+
       const cardOf = (item, index) => h('div', {
         key: item.id, role: 'button', tabIndex: 0,
         onClick: () => setPreview({ index }),
         onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') setPreview({ index }) },
         style: {
           cursor: 'zoom-in', borderRadius: 10, overflow: 'hidden', border: theme.border,
-          background: theme.surface, display: 'flex', flexDirection: 'column',
+          background: theme.surface, display: 'block', breakInside: 'avoid', marginBottom: 12,
         },
       },
-      h('div', { style: { position: 'relative', aspectRatio: '4 / 3', background: theme.soft } },
+      h('div', { style: { position: 'relative', aspectRatio: ratioOf(item), background: theme.soft } },
         item.thumbUrl
           ? h('img', {
             src: item.thumbUrl, loading: 'lazy', alt: '',
@@ -830,7 +832,7 @@ window.__ModuleLoader__.load({
       }))
 
       const grid = h('div', {
-        style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12, padding: '14px 16px' },
+        style: { columnWidth: 210, columnGap: 12, padding: '14px 16px' },
       }, items.map(cardOf))
 
       const footer = h('div', {
