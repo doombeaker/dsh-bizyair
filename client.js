@@ -836,15 +836,18 @@ window.__ModuleLoader__.load({
       }, items.map(cardOf))
 
       const footer = h('div', {
-        style: { display: 'flex', alignItems: 'center', gap: 12, padding: '4px 16px 20px', flexWrap: 'wrap' },
+        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '12px 16px 24px' },
       },
       items.length < total
-        ? h('button', {
-          type: 'button', style: smallButton, disabled: loading,
-          onClick: () => load(Math.floor(items.length / 24) + 1, { append: true }),
-        }, loading ? h(React.Fragment, null, h(Spinner, null), t.galleryLoading) : t.galleryLoadMore)
+        ? h('div', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
+          h('span', { style: { color: theme.muted, fontSize: 11 } }, `${items.length} / ${total}`),
+          h('button', {
+            type: 'button', disabled: loading,
+            style: { ...primaryButton(loading), padding: '10px 26px', borderRadius: 10, fontSize: 13.5 },
+            onClick: () => load(Math.floor(items.length / 24) + 1, { append: true }),
+          }, loading ? h(React.Fragment, null, h(Spinner, null), t.galleryLoading) : `${t.galleryLoadMore} ↓`))
         : null,
-      h('span', { style: { color: theme.muted, fontSize: 10.5 } }, t.gallerySource))
+      h('span', { style: { color: theme.muted, fontSize: 10.5, textAlign: 'center' } }, t.gallerySource))
 
       const content = error && !items.length
         ? h('div', { style: { padding: 24, color: theme.bad, fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center' } },
