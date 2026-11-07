@@ -351,6 +351,12 @@ window.__ModuleLoader__.load({
       return source ? coverUrl(source, width) : null
     }
 
+    function priceUrlOf(model) {
+      const base = model?.plazaUrl
+      if (!base) return PRICE_URL
+      return `${base}${base.includes('?') ? '&' : '?'}tab=price`
+    }
+
     function posterUrl(url, width = 640) {
       const sep = url.includes('?') ? '&' : '?'
       return `${url}${sep}x-oss-process=video/snapshot,t_1000,f_jpg,w_${width}`
@@ -1744,7 +1750,7 @@ window.__ModuleLoader__.load({
         style: { display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, fontSize: 12.5 },
       },
       h('a', {
-        href: PRICE_URL, target: '_blank', rel: 'noreferrer',
+        href: priceUrlOf(selected), target: '_blank', rel: 'noreferrer',
         style: { fontSize: 12, color: 'inherit', textDecoration: 'underline' },
       }, `${t.price} ↗`),
       estimate?.usd != null
@@ -1987,7 +1993,7 @@ window.__ModuleLoader__.load({
       inject: ['slots'],
       apply(ctx) {
         hostCtx = ctx
-        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui20', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
+        try { fetch('/bizyair/post/client-loaded?v=0.10.0+ui21', { method: 'POST' }).catch(() => {}) } catch { /* ignore */ }
 
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section',

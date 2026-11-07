@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.19 — 2026-11-07
+
+- "View price" opens the model's own price tab (`?tab=price`) instead of the global pricing page.
+
 ## 0.10.18 — 2026-11-07
 
 - Panel copy is product-facing: no test notes or platform jargon. Upgrade states read as
