@@ -166,39 +166,82 @@ function parsePrice(markdown) {
     const endpoint = chunk.match(/\*\*Endpoint\*\*:\s*`([^`]+)`/)?.[1]
     if (!endpoint) continue
     const title = chunk.split('\n')[0].trim()
-    const tableLines = chunk.split('\n').filter(l => l.trim().startsWith('|'))
-    const rows = []
+    const lines = chunk.split('\n')
+    const tables = []
     let header = null
-    for (const line of tableLines) {
-      const cells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim())
-      if (/^:?-{3,}$/.test(cells[0])) continue
-      if (!header) { header = cells; continue }
+    let columns = null
+    let rows = []
+    const flush = () => {
+      if (!header || !rows.length) { header = null; columns = null; rows = []; return }
+      tables.push({ header, columns, rows })
+      header = null; columns = null; rows = []
+    }
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('|')) { flush(); continue }
+      const cells = trimmed.replace(/^\||\|$/g, '').split('|').map(c => c.trim())
+      if (/^:?-{3,}/.test(cells[0])) continue
+      const priceIndex = cells.findIndex(cell => /price per/i.test(cell))
+      if (priceIndex >= 0) {
+        flush()
+        header = cells
+        columns = cells.map((cell, index) => ({ cell, index }))
+          .filter(({ cell }) => !/notes?|description/i.test(cell))
+        continue
+      }
+      if (!header) continue
       rows.push(cells)
     }
-    if (!header) continue
-    const valueColumn = header[header.length - 1]
-    const unitMatch = valueColumn.match(/Price per (.+)/i)
-    const unit = unitMatch ? `per_${unitMatch[1].trim().replace(/\s+/g, '_').toLowerCase()}` : 'per_call'
-    const dims = header.slice(0, -1)
-    const entries = []
-    for (const row of rows) {
-      const priceText = row[row.length - 1] ?? ''
-      const price = Number((priceText.match(/\$?\s*([\d.]+)/) ?? [])[1])
-      if (!Number.isFinite(price)) continue
-      const dim = {}
-      dims.forEach((d, i) => { dim[d] = row[i] })
-      entries.push({ dim, price })
-    }
-    if (!entries.length) continue
-    const note = chunk.split('\n').filter(l => l.trim().startsWith('>')).join('\n').replace(/^>\s?/gm, '').trim()
+    flush()
+    if (!tables.length) continue
+
+    const parsedTables = tables.map(table => {
+      const priceCell = table.header.find(cell => /price per/i.test(cell))
+      const priceIndex = table.header.indexOf(priceCell)
+      const unitMatch = priceCell.match(/Price per (.+)/i)
+      const unit = unitMatch ? `per_${unitMatch[1].trim().replace(/\s+/g, '_').toLowerCase()}` : 'per_call'
+      const dims = table.columns.filter(col => col.index !== priceIndex)
+      const entries = []
+      for (const row of table.rows) {
+        const priceText = row[priceIndex] ?? ''
+        const price = Number((priceText.match(/\$?\s*([\d.]+)/) ?? [])[1])
+        if (!Number.isFinite(price)) continue
+        const dim = {}
+        for (const col of dims) dim[col.cell] = row[col.index]
+        entries.push({ dim, price })
+      }
+      if (!entries.length) return null
+      const note = chunk.split('\n').filter(l => l.trim().startsWith('>')).join('\n').replace(/^>\s?/gm, '').trim()
+      return {
+        unit,
+        header: table.header,
+        dimensions: dims.map(col => col.cell),
+        rows: entries,
+        note: note || null,
+      }
+    }).filter(Boolean)
+    if (!parsedTables.length) continue
+
+    const primary = parsedTables.find(table => table.unit === 'per_call')
+      ?? parsedTables.find(table => table.unit !== 'per_image')
+      ?? parsedTables[0]
+    const display = parsedTables.map(table => {
+      const valueColumn = table.header[table.header.indexOf(table.header.find(c => /price per/i.test(c)))]
+      const dims = table.dimensions
+      const lines = table.rows.map(entry =>
+        `${dims.map(dim => `${dim}=${entry.dim[dim] ?? ''}`).join(' / ') || 'any'} $${entry.price}`)
+      return `${valueColumn}: ${lines.join(', ')}`
+    }).join('\n')
+
     blocks.set(endpoint, {
       title,
-      unit,
-      dimension: dims.length ? dims.join(' / ') : null,
-      dimensions: dims,
-      rows: entries,
-      note: note || null,
-      display: `${dims.length ? dims.join(' / ') + ' — ' : ''}${header[header.length - 1]}: ${entries.map(e => `${Object.values(e.dim).filter(Boolean).join('/') || 'any'} $${e.price}`).join(', ')}`,
+      unit: primary.unit,
+      dimension: primary.dimensions.length ? primary.dimensions.join(' / ') : null,
+      dimensions: primary.dimensions,
+      rows: primary.rows,
+      tables: parsedTables,
+      note: parsedTables.map(table => table.note).filter(Boolean).join('\n') || null,
+      display,
     })
   }
   return blocks

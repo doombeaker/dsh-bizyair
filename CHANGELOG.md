@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.20 — 2026-11-07
+
+- Price tables are parsed table by table: the price column is chosen by its header, notes are ignored,
+  and multi-table blocks (input + output) are kept separately. This removes nonsense estimates such as
+  $1920 for GPT Image 2, which came from reading "1920*1080" out of a notes column.
+- Cost estimation matches range dimensions ("<= 2073600", "> 3686400"), converts `WxH` sizes to pixels,
+  and adds extra-input-image surcharges when the price table declares them.
+
 ## 0.10.19 — 2026-11-07
 
 - "View price" opens the model's own price tab (`?tab=price`) instead of the global pricing page.
