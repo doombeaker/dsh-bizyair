@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.2 — 2026-11-08
+
+- The panel title shows the running version and the catalog date: `v0.12.2 · updated 2026-11-08`.
+  `/bizyair/api/catalog` now reports `pluginVersion`.
+- Storefront screenshots retaken with the new header.
+
 ## 0.12.1 — 2026-11-08
 
 - Descriptions are capability-first and AIGC-led, without model counts: image, video, audio and 3D
