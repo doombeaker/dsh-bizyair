@@ -2,7 +2,7 @@
 
 **一块钱，200 张图，快速出片。**
 
-235 个图像、视频、音频与视觉模型，在 DeepSeek Harness 里完成 AIGC 创作。注册赠额约等于 200 张图、3 条短视频或 100 分钟语音。
+把 AIGC 创作直接放进 DeepSeek Harness：用开源与闭源模型生成图像、视频、音频与 3D，含参数 schema、费用预估、审批与任务面板。
 
 [English →](README.md)
 
