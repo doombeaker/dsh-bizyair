@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.1 — 2026-11-08
+
+- Descriptions are capability-first and AIGC-led, without model counts: image, video, audio and 3D
+  from open and closed-source models (package.json, locale files, README pair).
+- The panel header shows the title only; the "235 models · 213 enabled by default · date" line is gone.
+- Storefront screenshots: gallery first, then the runs lightbox result shot, models and parameters.
+
 ## 0.12.0 — 2026-11-07
 
 - New **Gallery** tab: public BizyAir creations with thumbnails and video first frames, sort by

@@ -1,6 +1,6 @@
 {
   "name": "dsh-bizyair",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "AIGC creation inside DeepSeek Harness: generate images, video, audio and 3D with open and closed-source models — parameter schemas, cost estimates, approval gates and a task panel.",
   "type": "module",
   "main": "index.js",

@@ -5,8 +5,8 @@
     "zh": "BizyAir 模型广场"
   },
   "description": {
-    "en": "Every frontier image, video and audio model — open and closed source — in one AIGC creation platform inside DeepSeek Harness. A new account's credit is worth about 200 images, 3 short videos or 100 minutes of speech.",
-    "zh": "集结前沿的开源与闭源生图、生视频、音频模型，在 DeepSeek Harness 里完成 AIGC 创作。注册赠额约等于 200 张图、3 条短视频或 100 分钟语音。"
+    "en": "AIGC creation inside DeepSeek Harness: generate images, video, audio and 3D with open and closed-source models — parameter schemas, cost estimates, approval gates and a task panel.",
+    "zh": "把 AIGC 创作直接放进 DeepSeek Harness：用开源与闭源模型生成图像、视频、音频与 3D，含参数 schema、费用预估、审批与任务面板。"
   },
   "metadata": {
     "categories": {
@@ -26,8 +26,8 @@
         "zh": "BizyAir 模型广场"
       },
       "description": {
-        "en": "Every frontier image, video and audio model — open and closed source — in one AIGC creation platform inside DeepSeek Harness. A new account's credit is worth about 200 images, 3 short videos or 100 minutes of speech.",
-        "zh": "集结前沿的开源与闭源生图、生视频、音频模型，在 DeepSeek Harness 里完成 AIGC 创作。注册赠额约等于 200 张图、3 条短视频或 100 分钟语音。"
+        "en": "AIGC creation inside DeepSeek Harness: generate images, video, audio and 3D with open and closed-source models — parameter schemas, cost estimates, approval gates and a task panel.",
+        "zh": "把 AIGC 创作直接放进 DeepSeek Harness：用开源与闭源模型生成图像、视频、音频与 3D，含参数 schema、费用预估、审批与任务面板。"
       },
       "icon": "icon.svg",
       "author": "doombeaker",
@@ -49,8 +49,8 @@
       },
       "versions": [
         {
-          "version": "0.12.0",
-          "publishTimestamp": 1794032900,
+          "version": "0.12.1",
+          "publishTimestamp": 1794103957,
           "source": {
             "type": "npm"
           },
