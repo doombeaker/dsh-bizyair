@@ -12,6 +12,7 @@ AIGC creation inside DeepSeek Harness: generate images, video, audio and 3D with
 **Cost**: a new BizyAir account includes $1, ≈ 200 images ($0.005 each), 3 five-second 720P videos, or 100 minutes of speech. Calls estimated at ≥ 20 USD ask for confirmation; use `bizyair_price` to check first. BizyAir billing is authoritative.
 
 > Maintenance and release notes: [docs/PUBLISHING.md](docs/PUBLISHING.md)
+> Where this plugin is listed: [docs/WHERE-LISTED.md](docs/WHERE-LISTED.md)
 
 ## Install
 
