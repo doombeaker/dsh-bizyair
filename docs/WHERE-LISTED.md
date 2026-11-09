@@ -8,10 +8,10 @@ downstream sites pick it up automatically; 1024Store is a separate catalog we al
 | npm | — | ✅ published | https://www.npmjs.com/package/dsh-bizyair |
 | GitHub | — | ✅ source + docs | https://github.com/doombeaker/dsh-bizyair |
 | 1024Store (deepseek1024.com) | imsai-sh/awesome-deepseek-harness-plugins | ✅ listed | https://deepseek1024.com/plugins/doombeaker/dsh-bizyair |
-| awesome-dsh-plugin | awesome-dsh-plugin/awesome-dsh-plugin | ⏳ PR #12957 | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/12957 |
-| awesome-dsh-plugin.com | awesome-dsh-plugin | ⏳ follows the PR | https://awesome-dsh-plugin.com/zh/p/doombeaker/dsh-bizyair/ |
-| DSH Discover (official market tab) | default index = npm `dsh-plugin-catalog` (built from awesome) | ⏳ follows the PR | — |
-| dshmarket.com | awesome-dsh-plugin (downstream) | ⏳ follows the PR | https://dshmarket.com/ |
+| awesome-dsh-plugin | awesome-dsh-plugin/awesome-dsh-plugin | ✅ merged 2026-11-08 (#12957) | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/12957 |
+| awesome-dsh-plugin.com | awesome-dsh-plugin | ✅ live | https://awesome-dsh-plugin.com/zh/p/doombeaker/dsh-bizyair/ |
+| DSH Discover (official market tab) | default index = npm `dsh-plugin-catalog` (built from awesome) | ⏳ next catalog publish | — |
+| dshmarket.com | awesome-dsh-plugin (downstream) | ⏳ next catalog refresh | https://dshmarket.com/ |
 | dsh.so | independent crawler | ⏳ under review | https://www.dsh.so/zh/artifact/dsh-bizyair/ |
 
 Install:
