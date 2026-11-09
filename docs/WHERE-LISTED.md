@@ -12,7 +12,7 @@ downstream sites pick it up automatically; 1024Store is a separate catalog we al
 | awesome-dsh-plugin.com | awesome-dsh-plugin | ✅ live | https://awesome-dsh-plugin.com/zh/p/doombeaker/dsh-bizyair/ |
 | DSH Discover (official market tab) | default index = npm `dsh-plugin-catalog` (built from awesome) | ⏳ next catalog publish | — |
 | dshmarket.com | awesome-dsh-plugin (downstream) | ⏳ next catalog refresh | https://dshmarket.com/ |
-| dsh.so | independent crawler | ⏳ under review | https://www.dsh.so/zh/artifact/dsh-bizyair/ |
+| dsh.so | independent crawler | ✅ listed 2026-11-07 (L2 · Declared; description refreshes on its next scan) | https://www.dsh.so/zh/artifact/dsh-bizyair/ |
 
 Install:
 
